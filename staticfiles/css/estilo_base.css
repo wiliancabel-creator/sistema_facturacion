@@ -1,0 +1,245 @@
+/* === Contenedor general === */
+.contenedor {
+  max-width: 1600px;
+  margin: 40px auto;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
+  font-family: 'Segoe UI', sans-serif;
+  transition: all 0.4s ease;
+}
+
+/* === Títulos === */
+h2, h3 {
+  text-align: center;
+  color: #f5f5f5;
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+  transition: color 0.3s ease;
+}
+
+/* === Formularios === */
+form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #e0e0e0;
+  transition: color 0.3s ease;
+}
+
+form input,
+form textarea,
+form select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+form input:focus,
+form textarea:focus,
+form select:focus {
+  border-color: #6bc5ff;
+  outline: none;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* === Botones === */
+button,
+.btn {
+  background: linear-gradient(135deg, #007bff, #00c6ff);
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(0, 123, 255, 0.3);
+}
+
+button:hover,
+.btn:hover {
+  background: linear-gradient(135deg, #0056b3, #0096c7);
+  box-shadow: 0 4px 15px rgba(0, 150, 255, 0.4);
+}
+
+.botones-acciones {
+  margin-bottom: 15px;
+}
+
+/* === Layout en CUATRO columnas === */
+.venta-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr 1fr 220px;
+  gap: 25px;
+  max-width: 1600px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
+
+/* Aumentamos espacio y "aire" dentro de los paneles */
+.panel-sombreado {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 25px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+/* Modo claro coherente */
+body.light-mode .panel-sombreado {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+
+/* Accesos rápidos sin sombra */
+.panel-rapido {
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
+}
+
+.panel-rapido h6 {
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #d0d0d0;
+  transition: color 0.3s ease;
+}
+
+/* Caja de productos */
+.productos-box {
+  min-height: 300px;
+  max-height: 60vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+/* Fila de producto */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 15px;
+  align-items: start;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(6px);
+  transition: all 0.3s ease;
+}
+
+.form-row:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+
+
+/* === Tema oscuro (por defecto) === */
+body {
+  background: linear-gradient(135deg, #1a1c1f, #2a2d33, #141619);
+  background-attachment: fixed;
+  color: #f1f1f1;
+  transition: all 0.4s ease;
+}
+
+/* === Tema claro === */
+body.light-mode {
+  background: linear-gradient(135deg, #f6f7f9, #e9ecef);
+  color: #212529;
+}
+
+/* === Ajustes visuales modo claro === */
+body.light-mode .contenedor {
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode h2,
+body.light-mode h3,
+body.light-mode label {
+  color: #212529;
+}
+
+body.light-mode form input,
+body.light-mode form textarea,
+body.light-mode form select {
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  color: #212529;
+}
+
+body.light-mode form input:focus,
+body.light-mode form textarea:focus,
+body.light-mode form select:focus {
+  background-color: #ffffff;
+  border-color: #007bff;
+}
+
+body.light-mode .panel-sombreado {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .panel-rapido h6 {
+  color: #333;
+}
+
+body.light-mode .productos-box,
+body.light-mode .form-row {
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .navbar {
+  background-color: #f8f9fa !important;
+}
+
+body.light-mode .navbar a.nav-link,
+body.light-mode .navbar-brand {
+  color: #212529 !important;
+}
+
+body.light-mode .btn-outline-light {
+  color: #212529;
+  border-color: #212529;
+}
+
+body.light-mode .btn-outline-light:hover {
+  background-color: #212529;
+  color: white;
+}
+
+/* === Transiciones suaves === */
+.navbar, .container, .btn, .contenedor, .form-row, .productos-box {
+  transition: all 0.3s ease;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
