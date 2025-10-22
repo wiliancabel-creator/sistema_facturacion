@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-#3mu1zh58=&&p=bcwe1j1*02@06rja-!)qq4^=8w=73lg4uouc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['sistema-facturacion-gttt.onrender.com']
 
 
 # Application definition
