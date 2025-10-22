@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}
+Factura N°. {{ venta.numero_factura|stringformat:"05d" }}
+{% endblock %}
+
+{% block content %}
+<style>
+  .recibo {
+    max-width: 320px;
+    margin: auto;
+    font-family: monospace;
+    font-size: 13px;
+    background: #fff;
+    padding: 10px;
+    border: 1px dashed #ccc;
+  }
+
+  .recibo h3,
+  .recibo h4,
+  .recibo p {
+    text-align: center;
+    margin: 5px 0;
+  }
+
+  .recibo .datos-factura {
+    margin: 10px 0;
+    font-size: 14px;
+  }
+
+  .recibo table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  .recibo th,
+  .recibo td {
+    border-bottom: 1px dashed #ccc;
+    padding: 4px;
+    text-align: left;
+  }
+
+  .recibo .total {
+    text-align: right;
+    font-weight: bold;
+    margin-top: 10px;
+  }
+
+  .recibo .firma {
+    margin-top: 30px;
+    text-align: center;
+  }
+
+  @media print {
+    .btn-imprimir {
+      display: none;
+    }
+  }
+</style>
+
+<div class="recibo">
+  <h3>SISTEMAS FAJARDO</h3>
+  <p>📍 Calle Principal #123<br>☎️ 9999-9999<br>📧 tienda@ejemplo.com</p>
+  
+<hr class="linea-separadora">
+
+  <div class="datos-factura">
+    <h4>Factura N°. {{ venta.numero_factura|stringformat:"05d" }}</h4>
+    <p>
+      CAI: {{ venta.cai.codigo }}<br>
+      Válido hasta: {{ venta.cai.fecha_limite|date:"d/m/Y" }}
+    </p>
+
+    <hr class="linea-separadora">
+
+    <p>Fecha: {{ venta.fecha|date:"d/m/Y H:i" }}</p>
+    <p>💳 Tipo de pago: {{ venta.tipo_pago|title }}</p>
+    {% if venta.tipo_pago|lower == "credito" and fecha_vencimiento %}
+    <p>📅 Vence: {{ fecha_vencimiento|date:"d/m/Y" }}</p>
+     {% endif %}
+
+  </div>
+
+  {% if venta.cliente %}
+    <p>🧍 Cliente: {{ venta.cliente.nombre }}</p>
+    {% if venta.cliente.telefono %}<p>📞 {{ venta.cliente.telefono }}</p>{% endif %}
+    {% if venta.cliente.correo %}<p>📧 {{ venta.cliente.correo }}</p>{% endif %}
+    <hr>
+  {% endif %}
+
+ <table>
+  <thead>
+    <tr>
+      <th>Producto</th>
+      <th>Cant</th>
+      <th>Precio</th>
+      <th>Desc.</th>
+      <th>Subt</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in detalles %}
+      <tr>
+        <td>{{ item.producto.nombre }}</td>
+        <td>{{ item.cantidad }}</td>
+        <td>L {{ item.precio_unitario }}</td>   <!-- precio original -->
+        <td>{{ item.descuento }}%</td>          <!-- % descuento -->
+        <td>L {{ item.subtotal }}</td>          <!-- subtotal con descuento -->
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+  <p class="total">💰 Total: L {{ venta.total }}</p>
+
+  <div class="firma">
+    <p>__________________________</p>
+    <p>Firma del cliente</p>
+  </div>
+
+  <div class="text-center mt-3">
+    <button onclick="window.print()" class="btn btn-sm btn-primary btn-imprimir">
+      🖨️ Imprimir
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+

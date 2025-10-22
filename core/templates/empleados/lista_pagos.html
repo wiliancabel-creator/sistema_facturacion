@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>💵 Pagos a Empleados</h2>
+<a href="{% url 'registrar_pago' %}" class="btn btn-primary mb-3">➕ Registrar Pago</a>
+<table class="table table-bordered">
+  <tr>
+    <th>Empleado</th>
+    <th>Fecha</th>
+    <th>Monto</th>
+    <th>Descripción</th>
+  </tr>
+  {% for p in pagos %}
+  <tr>
+    <td>{{ p.empleado.nombre }}</td>
+    <td>{{ p.fecha_pago }}</td>
+    <td>L {{ p.monto }}</td>
+    <td>{{ p.descripcion }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Registrar Pago{% endblock %}
+{% block content %}
+
+<h2>Registrar Pago de Cliente</h2>
+
+{# Mostramos mensajes de error, si hay #}
+{% if messages %}
+  {% for msg in messages %}
+    <div class="alert alert-danger">{{ msg }}</div>
+  {% endfor %}
+{% endif %}
+
+<p><strong>Cliente:</strong> {{ cuenta.cliente.nombre }}</p>
+<p><strong>Monto total:</strong> L {{ cuenta.monto_pendiente }}</p>
+<p><strong>Monto ya pagado:</strong> L {{ cuenta.monto_pagado }}</p>
+<p><strong>Saldo restante:</strong> L {{ restante }}</p>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="monto" class="form-label">Monto a pagar:</label>
+    <input
+      type="number"
+      step="0.01"
+      name="monto"
+      class="form-control"
+      min="0.01"
+      max="{{ restante }}"
+      placeholder="Hasta L {{ restante }}"
+      required
+    >
+  </div>
+  <button type="submit" class="btn btn-success">Registrar Pago</button>
+</form>
+
+{% endblock %}
+

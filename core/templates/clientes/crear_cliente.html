@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Registrar Cliente{% endblock %}
+{% block content %}
+
+<div class="contenedor">
+
+    <h2>🧑‍💼 Registrar Cliente</h2>
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn">💾 Guardar Cliente</button>
+    </form>
+</div>    
+
+{% endblock %}   
+
+

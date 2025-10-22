@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>💵 Registrar Pago</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="btn btn-success">💾 Guardar</button>
+</form>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Diccionario de salarios enviado desde la vista
+    const salarioPorEmpleado = {{ salarios|safe }};
+    const empleadoSelect = document.getElementById('id_empleado');
+    const montoInput = document.getElementById('id_monto');
+
+    if (empleadoSelect && montoInput) {
+      empleadoSelect.addEventListener('change', function() {
+        const empleadoId = parseInt(this.value);
+        if (salarioPorEmpleado[empleadoId]) {
+          // 👇 Coloca el salario en el campo monto
+          montoInput.value = salarioPorEmpleado[empleadoId].toFixed(2);
+        } else {
+          montoInput.value = '';
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

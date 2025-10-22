@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Resumen de Compra{% endblock %}
+{% block content %}
+
+<h2>Resumen de Compra</h2>
+
+<p><strong>Proveedor:</strong> {{ compra.proveedor.nombre }}</p>
+<p><strong>Fecha:</strong> {{ compra.fecha|date:"d/m/Y H:i" }}</p>
+<p><strong>Total:</strong> L {{ compra.total }}</p>
+
+<table class="table table-bordered mt-3">
+  <thead>
+    <tr>
+      <th>Producto</th>
+      <th>Cantidad</th>
+      <th>Precio Unitario</th>
+      <th>Subtotal</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for detalle in detalles %}
+    <tr>
+      <td>{{ detalle.producto.nombre }}</td>
+      <td>{{ detalle.cantidad }}</td>
+      <td>L {{ detalle.precio_unitario }}</td>
+      <td>L {{ detalle.subtotal }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="#" onclick="window.print()" class="btn btn-secondary">🖨️ Imprimir</a>
+
+{% endblock %}

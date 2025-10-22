@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4"> </h2>
+
+  <!-- Estadísticas -->
+  <div class="row">
+    {% if perms.core.add_venta %}
+  <div class="col-md-3"><div class="card bg-success text-white mb-3"><div class="card-header">Ventas Hoy</div><div class="card-body"><h5>L {{ ventas_hoy }}</h5></div></div></div>
+  <div class="col-md-3"><div class="card bg-primary text-white mb-3"><div class="card-header">Compras Hoy</div><div class="card-body"><h5>L {{ compras_hoy }}</h5></div></div></div>
+  <div class="col-md-3"><div class="card bg-info text-dark mb-3"><div class="card-header">Productos Vendidos Hoy</div><div class="card-body"><h5>{{ productos_vendidos_hoy }}</h5></div></div></div>
+  <div class="col-md-3"><div class="card bg-warning text-dark mb-3"><div class="card-header">Productos Comprados Hoy</div><div class="card-body"><h5>{{ productos_comprados_hoy }}</h5></div></div></div>
+  {% endif %}
+</div>
+
+<div class="row">
+  {% if perms.core.add_venta %}
+  {% if perms.core.delete_cai %}
+  <div class="col-md-3"><div class="card bg-dark text-white mb-3"><div class="card-header">Total Ventas</div><div class="card-body"><h5>L {{ total_ventas }}</h5></div></div></div>
+  <div class="col-md-3"><div class="card bg-secondary text-white mb-3"><div class="card-header">Total Compras</div><div class="card-body"><h5>L {{ total_compras }}</h5></div></div></div>
+  {% endif %}
+  {% endif %}
+  <div class="col-md-3"><div class="card bg-light text-dark mb-3"><div class="card-header">Total Productos</div><div class="card-body"><h5>{{ total_productos }}</h5></div></div></div>
+  <div class="col-md-3"><div class="card bg-danger text-white mb-3"><div class="card-header">Total Clientes</div><div class="card-body"><h5>{{ total_clientes }}</h5></div></div></div>
+</div>
+
+<div class="row">
+  <div class="col-md-3"><div class="card bg-dark text-white mb-3"><div class="card-header">Total Proveedores</div><div class="card-body"><h5>{{ total_proveedores }}</h5></div></div></div>
+</div>
+
+
+  <!-- Accesos rápidos -->
+  <div class="mt-4">
+    <h4>⚡ Accesos Rápidos</h4>
+    <div class="btn-group mb-3" role="group" aria-label="Accesos rápidos">
+      {% if perms.core.view_venta %}
+      <a href="{% url 'dashboard_graficos' %}"        class="btn btn-success">📈Graficas</a>
+      <a href="{% url 'resumen_ventas' %}"      class="btn btn-outline-success">📋 Ver Ventas</a>
+      {% endif %}
+
+      {% if perms.core.add_compra %}
+      <a href="{% url 'crear_compra' %}"       class="btn btn-danger">📥 Nueva Compra</a>
+      {% endif %}
+
+      {% if perms.core.view_compra %}
+      <a href="{% url 'resumen_compras' %}"     class="btn btn-outline-danger">📄 Ver Compras</a>
+      {% endif %}
+
+      {% if perms.core.add_producto %}
+      <a href="{% url 'agregar_producto' %}"     class="btn btn-primary">➕ Nuevo Producto</a>
+      {% endif %}
+
+
+      {% if perms.core.view_cuentaporcobrar or perms.core.view_cuentaporpagar %}
+      <a href="{% url 'resumen_cuentas' %}" class="btn btn-outline-primary">💸 Cobrar y Pagar</a>
+      {% endif %}
+
+
+      {% if perms.core.add_cliente %}
+      <a href="{% url 'crear_cliente' %}"      class="btn btn-success">➕ Nuevo Cliente</a>
+      {% endif %}
+
+      {% if perms.core.view_cliente %}
+      <a href="{% url 'listar_clientes' %}"    class="btn btn-outline-success">👥 Ver Clientes</a>
+      {% endif %}
+      {% if perms.core.add_proveedor %}
+      <a href="{% url 'registrar_proveedor' %}"    class="btn btn-danger">➕ Nuevo Proveedor</a>
+      {% endif %}
+
+      {% if perms.core.view_proveedor %}
+      <a href="{% url 'lista_proveedores' %}" class="btn btn-outline-danger">🏭 Ver Proveedores</a>
+      {% endif %}
+
+      {% if perms.core.view_cai %}      
+      <a href="{% url 'listar_cai' %}" class="btn btn-outline-danger">📋 Cais</a>
+      {% endif %}
+      
+    </div>
+  </div>
+
+ 
+ 
+  <!-- Sugerencia: aquí podrías incrustar gráficas o tablas -->
+  <div class="mt-5">
+    <h4>📈 Tendencias</h4>
+    <p class="text-muted">   </p>
+  </div>
+</div>
+{% endblock %}
+

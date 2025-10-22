@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Resumen de Compras{% endblock %}
+{% block content %}
+
+<div class="contenedor">
+
+<h2>Resumen de Compras</h2>
+
+<form method="get" class="row g-3 mb-4">
+  <div class="col-auto">
+    <label for="fecha">Selecciona una fecha:</label>
+    <input type="date" name="fecha" id="fecha" value="{{ fecha }}" class="form-control">
+  </div>
+  <div class="col-auto align-self-end">
+    <button type="submit" class="btn btn-primary">Buscar</button>
+  </div>
+</form>
+
+{% if fecha %}
+  <p><strong>Compras del:</strong> {{ fecha }}</p>
+{% endif %}
+<p><strong>Total del día:</strong> L {{ total_general }}</p>
+
+<table class="table table-striped mt-3">
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Proveedor</th>
+      <th>Total</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for compra in compras %}
+    <tr>
+      <td>{{ compra.fecha}}</td>
+      <td>{{ compra.proveedor.nombre }}</td>
+      <td>L {{ compra.total }}</td>
+      <td>
+        <a href="{% url 'resumen_compra' compra.id %}" class="btn btn-sm btn-outline-primary">Ver Detalle</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">No hay compras registradas en esta fecha.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}Registrar Compra{% endblock %}
+{% block content %}
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<form method="post" id="compra-form">
+  {% csrf_token %}
+
+  <div class="row">
+    <!-- Columna izquierda -->
+    <div class="col-md-4">
+      <h4>📦 Datos de la compra</h4>
+
+      {{ compra_form.proveedor.label_tag }} {{ compra_form.proveedor }}
+      {{ compra_form.tipo_pago.label_tag }} {{ compra_form.tipo_pago }}
+
+      <label for="producto-buscar">🔍 Buscar producto:</label>
+      <select id="producto-buscar" class="form-control producto-select">
+        <option value="">-- Seleccione --</option>
+        {% for p in productos %}
+          <option value="{{ p.id }}" data-precio="{{ p.precio|floatformat:'2' }}">
+            {{ p.codigo }} - {{ p.nombre }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Columna derecha -->
+    <div class="col-md-8">
+      <h4>🛒 Productos</h4>
+      <table class="table table-bordered" id="tabla-productos">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Precio Unitario</th>
+            <th>Subtotal</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr>
+            <th colspan="3" class="text-end">Total:</th>
+            <th id="total-compra">0.00</th>
+            <th></th>
+          </tr>
+        </tfoot>
+      </table>
+
+      <!-- Único botón que envía el formulario -->
+      <button type="submit" class="btn btn-success">💾 Guardar Compra</button>
+    </div>
+  </div>
+</form>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function(){
+  $('#producto-buscar').select2({ placeholder: "Buscar por código o nombre", width: '100%' });
+
+  function recalcularTotal(){
+    let total = 0;
+    $('#tabla-productos tbody tr').each(function(){
+      const cant = parseFloat($(this).find('.cantidad').val()) || 0;
+      const precio = parseFloat($(this).find('.precio').val()) || 0;
+      const subtotal = cant * precio;
+      $(this).find('.subtotal').text(subtotal.toFixed(2));
+      total += subtotal;
+    });
+    $('#total-compra').text(total.toFixed(2));
+  }
+
+  function agregarProducto(){
+    const select = $('#producto-buscar');
+    const id = select.val();
+    const nombre = select.find('option:selected').text();
+    const precioAttr = select.find('option:selected').data('precio');
+    const precio = parseFloat(precioAttr) || 0;
+
+    if(!id) return;
+
+    // Si ya existe, aumentar cantidad
+    let existente = $('#tabla-productos tbody tr[data-id="'+id+'"]');
+    if(existente.length){
+      let cantInput = existente.find('.cantidad');
+      cantInput.val(parseInt(cantInput.val() || '0') + 1);
+      recalcularTotal();
+    } else {
+      const fila = `
+        <tr data-id="${id}">
+          <td>
+            ${nombre}
+            <input type="hidden" name="producto_id[]" value="${id}">
+          </td>
+          <td><input type="number" name="cantidad[]" value="1" min="1" class="form-control cantidad"></td>
+          <td><input type="number" name="precio_unitario[]" value="${precio.toFixed(2)}" step="0.01" class="form-control precio"></td>
+          <td class="subtotal">${precio.toFixed(2)}</td>
+          <td><button type="button" class="btn btn-danger btn-sm eliminar">❌</button></td>
+        </tr>
+      `;
+      $('#tabla-productos tbody').append(fila);
+      recalcularTotal();
+    }
+
+    // Limpiar y enfocar buscador
+    select.val(null).trigger('change');
+    select.select2('open');
+  }
+
+  // Agregar producto automáticamente al seleccionarlo
+  $('#producto-buscar').on('select2:select', function () {
+    agregarProducto();
+  });
+
+  // Eliminar fila
+  $(document).on('click', '.eliminar', function(){
+    $(this).closest('tr').remove();
+    recalcularTotal();
+  });
+
+  // Recalcular al cambiar cantidad o precio
+  $(document).on('input', '.cantidad, .precio', function(){
+    recalcularTotal();
+  });
+});
+</script>
+
+{% endblock %}
+
+
+
+
+

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Detalle Cotización{% endblock %}
+
+{% block content %}
+<style>
+  .recibo {
+    max-width: 380px;
+    margin: auto;
+    font-family: monospace;
+    font-size: 13px;
+    background: #fff;
+    padding: 10px;
+    border: 1px dashed #ccc;
+  }
+
+  .recibo h3, .recibo h4, .recibo p {
+    text-align: center;
+    margin: 5px 0;
+  }
+
+  .recibo table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 12px;
+  }
+
+  .recibo th, .recibo td {
+    border-bottom: 1px dashed #ccc;
+    padding: 4px;
+    text-align: left;
+  }
+
+  .recibo .total {
+    text-align: right;
+    font-weight: bold;
+    margin-top: 10px;
+  }
+
+  .recibo .firma {
+    margin-top: 30px;
+    text-align: center;
+  }
+
+  @media print {
+    .btn-imprimir, .btn-facturar {
+      display: none;
+    }
+  }
+</style>
+
+<div class="recibo">
+  <h3>SISTEMAS FAJARDO</h3>
+  <p>📍 Calle Principal #123<br>☎️ 9999-9999<br>📧 tienda@ejemplo.com</p>
+  
+  <hr>
+
+  <div class="datos-cotizacion">
+    <h4>📝 Cotización N°. {{ cotizacion.id|stringformat:"05d" }}</h4>
+    <p>Fecha: {{ cotizacion.fecha|date:"d/m/Y H:i" }}</p>
+  </div>
+
+  {% if cotizacion.cliente %}
+    <p>🧍 Cliente: {{ cotizacion.cliente.nombre }}</p>
+    {% if cotizacion.cliente.telefono %}<p>📞 {{ cotizacion.cliente.telefono }}</p>{% endif %}
+    {% if cotizacion.cliente.correo %}<p>📧 {{ cotizacion.cliente.correo }}</p>{% endif %}
+    <hr>
+  {% endif %}
+
+  <table>
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Cant</th>
+        <th>Precio</th>
+        <th>Desc.</th>
+        <th>Subt</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in cotizacion.detalles.all %}
+        <tr>
+          <td>{{ item.producto.nombre }}</td>
+          <td>{{ item.cantidad }}</td>
+          <td>L {{ item.precio_unitario }}</td>
+          <td>{{ item.descuento }}%</td>
+          <td>L {{ item.subtotal }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p class="total">🪙 Total: L {{ cotizacion.total }}</p>
+
+  <div class="firma">
+    <p>__________________________</p>
+    <p>Firma del cliente</p>
+  </div>
+
+  <div class="text-center mt-3">
+    <button onclick="window.print()" class="btn btn-sm btn-primary btn-imprimir">
+      🖨️ Imprimir
+    </button>
+
+    {% if cotizacion.estado == "pendiente" %}
+      <a href="{% url 'facturar_cotizacion' cotizacion.id %}" class="btn btn-sm btn-success btn-facturar">
+        💰 Facturar esta cotización
+      </a>
+    {% else %}
+      <p style="color: green; font-weight: bold;">✅ Ya fue facturada</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Agregar Categoría{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>➕ Nueva Categoría</h2>
+    <hr>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-success">💾 Guardar</button>
+        <a href="{% url 'listar_productos' %}" class="btn btn-secondary">↩ Volver</a>
+    </form>
+</div>
+{% endblock %}

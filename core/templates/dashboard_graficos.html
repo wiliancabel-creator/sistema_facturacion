@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard de Gráficos{% endblock %}
+{% block content %}
+
+<h2>📊 Ventas y Compras por Día</h2>
+<canvas id="graficoDiario" height="100"></canvas>
+
+<h2 class="mt-5">📅 Ventas y Compras por Mes</h2>
+<canvas id="graficoMensual" height="100"></canvas>
+
+<h2 class="mt-5">📈 Ventas y Compras por Año</h2>
+<canvas id="graficoAnual" height="100"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ventasDiarias = {{ ventas_diarias|safe }};
+  const comprasDiarias = {{ compras_diarias|safe }};
+  const ventasMensuales = {{ ventas_mensuales|safe }};
+  const comprasMensuales = {{ compras_mensuales|safe }};
+  const ventasAnuales = {{ ventas_anuales|safe }};
+  const comprasAnuales = {{ compras_anuales|safe }};
+
+  function formatearFechas(data, campo) {
+    return data.map(item => item[campo].slice(0, 10));
+  }
+
+  function extraerTotales(data) {
+    return data.map(item => item.total);
+  }
+
+  // Gráfico Diario
+  new Chart(document.getElementById('graficoDiario'), {
+    type: 'bar',
+    data: {
+      labels: formatearFechas(ventasDiarias, 'dia'),
+      datasets: [
+        {
+          label: 'Ventas',
+          data: extraerTotales(ventasDiarias),
+          backgroundColor: 'rgba(54, 162, 235, 0.7)'
+        },
+        {
+          label: 'Compras',
+          data: extraerTotales(comprasDiarias),
+          backgroundColor: 'rgba(255, 99, 132, 0.7)'
+        }
+      ]
+    }
+  });
+
+  // Gráfico Mensual
+  new Chart(document.getElementById('graficoMensual'), {
+    type: 'bar',
+    data: {
+      labels: formatearFechas(ventasMensuales, 'mes'),
+      datasets: [
+        {
+          label: 'Ventas',
+          data: extraerTotales(ventasMensuales),
+          backgroundColor: 'rgba(54, 162, 235, 0.7)'
+        },
+        {
+          label: 'Compras',
+          data: extraerTotales(comprasMensuales),
+          backgroundColor: 'rgba(255, 99, 132, 0.7)'
+        }
+      ]
+    }
+  });
+
+  // Gráfico Anual
+  new Chart(document.getElementById('graficoAnual'), {
+    type: 'bar',
+    data: {
+      labels: ventasAnuales.map(item => item.año),
+      datasets: [
+        {
+          label: 'Ventas',
+          data: extraerTotales(ventasAnuales),
+          backgroundColor: 'rgba(54, 162, 235, 0.7)'
+        },
+        {
+          label: 'Compras',
+          data: extraerTotales(comprasAnuales),
+          backgroundColor: 'rgba(255, 99, 132, 0.7)'
+        }
+      ]
+    }
+  });
+</script>
+
+{% endblock %}
