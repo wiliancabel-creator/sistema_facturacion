@@ -82,7 +82,7 @@
 
               <div class="acciones-producto">
                 <button type="button" class="remove-btn">❌</button>
-                <button type="button" class="discount-btn btn btn-sm btn-warning mt-2">💸 -6%</button>
+                <button type="button" class="discount-btn btn btn-sm btn-warning mt-2">💸-6%</button>
               </div>
             </div>
           {% endfor %}
@@ -363,6 +363,11 @@ $('#id_cliente').select2({
     },
     cache: true
   }
+});
+
+// Prevenir que botones táctiles abran teclado
+document.querySelectorAll('.quick-product').forEach(btn => {
+  btn.addEventListener('touchstart', e => e.preventDefault());
 });
 
 
