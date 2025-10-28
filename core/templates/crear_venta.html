@@ -21,16 +21,17 @@
     <div class="venta-layout">
       
       <!-- Columna 1: Accesos rápidos izquierda -->
-      <div class="columna-accesos panel-rapido">
-        <h6>⚡ Accesos rápidos</h6>
-        <div class="d-grid gap-2">
-          <button type="button" class="btn btn-outline-success quick-product" data-codigo="343434">Aceite Hidráulico</button>
-          <button type="button" class="btn btn-outline-success quick-product" data-codigo="353535">Llanta 16</button>
-          <button type="button" class="btn btn-outline-success quick-product" data-codigo="363636">Llanta 45</button>
-          <button type="button" class="btn btn-outline-success quick-product" data-codigo="363636">Llanta 45</button>
-          <button type="button" class="btn btn-outline-success quick-product" data-codigo="363636">Llanta 45</button>
-        </div>
-      </div>
+     <div class="columna-accesos panel-rapido">
+  <h6>⚡ Accesos rápidos</h6>
+  <div class="d-grid gap-2">
+    <div class="btn btn-outline-success quick-product" data-codigo="343434">Aceite Hidráulico</div>
+    <div class="btn btn-outline-success quick-product" data-codigo="353535">Llanta 16</div>
+    <div class="btn btn-outline-success quick-product" data-codigo="363636">Llanta 45</div>
+    <div class="btn btn-outline-success quick-product" data-codigo="363636">Llanta 45</div>
+    <div class="btn btn-outline-success quick-product" data-codigo="363636">Llanta 45</div>
+  </div>
+</div>
+
 
       <!-- Columna 2: Buscador + Cliente -->
       <div class="columna-izquierda panel-sombreado">
@@ -360,12 +361,6 @@ $('#id_cliente').select2({
   }
 });
 
-// 🔹 Evitar que los botones "quick-product" activen el teclado táctil en tablets
-document.addEventListener('focusin', function (e) {
-  if (e.target.classList.contains('quick-product')) {
-    e.target.blur(); // quita el foco y evita que aparezca el teclado
-  }
-});
 
 });
 
