@@ -129,11 +129,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / "staticfiles"  # o str(BASE_DIR / "staticfiles") en Django < 4.2
+STATIC_ROOT = BASE_DIR / "staticfiles"  # donde Django juntará todo para producción
 
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',  # <-- aquí va tu CSS, JS, imágenes
+    BASE_DIR / 'static',  # tus archivos estáticos locales (CSS, JS, imágenes)
 ]
+
+# WhiteNoise: sirve archivos estáticos comprimidos en producción
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 
 # Default primary key field type
