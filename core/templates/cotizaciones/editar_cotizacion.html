@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
         
-          if (productoExiste) {
+         if (productoExiste) {
             actualizarTotal();
             codigoInput.value = '';
             // Evitar abrir teclado en tablets
@@ -297,10 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-// Prevenir que botones táctiles abran teclado
-document.querySelectorAll('.quick-product').forEach(btn => {
-  btn.addEventListener('touchstart', e => e.preventDefault());
-});  
+
 
 });
 </script>
