@@ -299,6 +299,12 @@ document.addEventListener('DOMContentLoaded', () => {
       buscarYAgregar(codigo);
     });
   });
+
+// Prevenir que botones táctiles abran teclado
+document.querySelectorAll('.quick-product').forEach(btn => {
+  btn.addEventListener('touchstart', e => e.preventDefault());
+});  
+
 });
 </script>
 

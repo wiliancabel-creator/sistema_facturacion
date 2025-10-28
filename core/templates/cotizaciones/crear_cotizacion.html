@@ -93,6 +93,19 @@
   </form>
 </div> 
 
+<style>
+.venta-layout { display: flex; gap: 20px; align-items: flex-start; }
+.columna-izquierda { flex: 1; min-width: 250px; }
+.columna-centro { flex: 3; min-width: 600px; }
+.columna-derecha { flex: 1; min-width: 200px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; align-items: start; margin-bottom: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; }
+.cantidad-input, .precio-input { display: flex; flex-direction: column; }
+.precio-readonly { background-color: #f8f9fa !important; color: #495057; }
+.remove-btn { background-color: #dc3545; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; height: fit-content; margin-top: 24px; }
+.acciones-producto { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-top: 24px; }
+.discount-btn { padding: 8px 5px; font-size: 14px; }
+@media (max-width: 768px) { .venta-layout { flex-direction: column; } }
+</style>
 
 
 <script>
@@ -287,6 +300,13 @@ document.addEventListener('DOMContentLoaded', () => {
       buscarYAgregar(codigo);
     });
   });
+
+// Prevenir que botones táctiles abran teclado
+document.querySelectorAll('.quick-product').forEach(btn => {
+  btn.addEventListener('touchstart', e => e.preventDefault());
+});  
+
+
 });
 </script>
 
