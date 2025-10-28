@@ -79,7 +79,7 @@ button:hover,
 /* === Layout adaptable === */
 .venta-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   width: 100%;
   max-width: 100%;
@@ -98,6 +98,7 @@ button:hover,
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(12px);
   transition: all 0.3s ease;
+  overflow: hidden;
 }
 
 body.light-mode .panel-sombreado {
@@ -110,6 +111,18 @@ body.light-mode .panel-sombreado {
   background: transparent;
   box-shadow: none;
   text-align: center;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.panel-rapido::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel-rapido::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
 }
 
 .panel-rapido h6 {
@@ -257,6 +270,7 @@ body.light-mode .form-row {
 .navbar, .container, .btn, .contenedor, .form-row, .productos-box {
   transition: all 0.3s ease;
 }
+
 
 
 
