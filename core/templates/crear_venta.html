@@ -220,15 +220,13 @@
           if (cantidadInput)  cantidadInput.value  = 1;
           if (precioInput)    precioInput.value    = json.precio;
 
-         formContainer.insertBefore(newRow, formContainer.firstChild);
-        totalFormsInput.value = currentCount + 1;
-        actualizarTotal();
-        codigoInput.value = '';
-        // Evitar abrir teclado en dispositivos táctiles
-        if (!('ontouchstart' in window)) {
+          formContainer.insertBefore(newRow, formContainer.firstChild);
+          totalFormsInput.value = currentCount + 1;
+          actualizarTotal();
+          codigoInput.value = '';
           codigoInput.focus();
-        }
-
+        })
+        
         .catch(error => {
           console.error('Error:', error);
           errorMsg.innerText = 'Error al buscar el producto';
@@ -367,10 +365,6 @@ $('#id_cliente').select2({
   }
 });
 
-// Prevenir que botones táctiles abran teclado
-document.querySelectorAll('.quick-product').forEach(btn => {
-  btn.addEventListener('touchstart', e => e.preventDefault());
-});
 
 });
 
