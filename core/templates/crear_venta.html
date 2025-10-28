@@ -359,6 +359,14 @@ $('#id_cliente').select2({
     cache: true
   }
 });
+
+// 🔹 Evitar que los botones "quick-product" activen el teclado táctil en tablets
+document.addEventListener('focusin', function (e) {
+  if (e.target.classList.contains('quick-product')) {
+    e.target.blur(); // quita el foco y evita que aparezca el teclado
+  }
+});
+
 });
 
   </script>
