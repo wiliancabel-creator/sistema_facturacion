@@ -9,6 +9,7 @@
   box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
   font-family: 'Segoe UI', sans-serif;
   transition: all 0.4s ease;
+  box-sizing: border-box;
 }
 
 /* === Títulos === */
@@ -75,17 +76,20 @@ button:hover,
   margin-bottom: 15px;
 }
 
-/* === Layout en CUATRO columnas === */
+/* === Layout adaptable === */
 .venta-layout {
   display: grid;
-  grid-template-columns: 220px 1fr 1fr 220px;
-  gap: 25px;
-  max-width: 1600px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
-  align-items: flex-start;
+  padding: 10px;
+  align-items: start;
+  box-sizing: border-box;
 }
 
-/* Aumentamos espacio y "aire" dentro de los paneles */
+/* === Paneles === */
 .panel-sombreado {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -96,14 +100,12 @@ button:hover,
   transition: all 0.3s ease;
 }
 
-/* Modo claro coherente */
 body.light-mode .panel-sombreado {
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-
-/* Accesos rápidos sin sombra */
+/* === Accesos rápidos === */
 .panel-rapido {
   background: transparent;
   box-shadow: none;
@@ -117,10 +119,17 @@ body.light-mode .panel-sombreado {
   transition: color 0.3s ease;
 }
 
-/* Caja de productos */
+.panel-rapido .btn {
+  width: 100%;
+  font-size: 15px;
+  margin-bottom: 10px;
+  padding: 12px;
+}
+
+/* === Caja de productos === */
 .productos-box {
-  min-height: 300px;
-  max-height: 60vh;
+  min-height: 200px;
+  max-height: 55vh;
   overflow-y: auto;
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 10px;
@@ -130,14 +139,14 @@ body.light-mode .panel-sombreado {
   transition: all 0.3s ease;
 }
 
-/* Fila de producto */
+/* === Fila de producto === */
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
-  gap: 15px;
+  gap: 10px;
   align-items: start;
-  margin-bottom: 12px;
-  padding: 12px;
+  margin-bottom: 10px;
+  padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 6px;
   background-color: rgba(255, 255, 255, 0.07);
@@ -147,13 +156,6 @@ body.light-mode .panel-sombreado {
 
 .form-row:hover {
   background-color: rgba(255, 255, 255, 0.12);
-}
-
-/* Responsive */
-@media (max-width: 992px) {
-  .venta-layout {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* === Tema oscuro (por defecto) === */
@@ -212,29 +214,50 @@ body.light-mode .form-row {
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-body.light-mode .navbar {
-  background-color: #f8f9fa !important;
+/* === Responsividad === */
+@media (max-width: 1200px) {
+  .btn {
+    font-size: 15px;
+    padding: 10px 18px;
+  }
 }
 
-body.light-mode .navbar a.nav-link,
-body.light-mode .navbar-brand {
-  color: #212529 !important;
+@media (max-width: 992px) {
+  .venta-layout {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
-body.light-mode .btn-outline-light {
-  color: #212529;
-  border-color: #212529;
-}
+@media (max-width: 768px) {
+  .venta-layout {
+    grid-template-columns: 1fr;
+  }
 
-body.light-mode .btn-outline-light:hover {
-  background-color: #212529;
-  color: white;
+  .panel-sombreado, .panel-rapido {
+    margin-bottom: 20px;
+  }
+
+  form input,
+  form textarea,
+  form select {
+    font-size: 14px;
+  }
+
+  .btn {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  h2, h3, h6 {
+    font-size: 16px;
+  }
 }
 
 /* === Transiciones suaves === */
 .navbar, .container, .btn, .contenedor, .form-row, .productos-box {
   transition: all 0.3s ease;
 }
+
 
 
 
