@@ -1,5 +1,5 @@
 """
-ASGI config for tienda_ropa project.
+ASGI config for sistema_base project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 

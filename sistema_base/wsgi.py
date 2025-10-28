@@ -1,5 +1,5 @@
 """
-WSGI config for tienda_ropa project.
+WSGI config for sistema_base project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
