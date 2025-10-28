@@ -1,1 +1,1 @@
-web: gunicorn tienda_ropa.wsgi --log-file -
+web: gunicorn sistema_base.wsgi --log-file -
