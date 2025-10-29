@@ -478,6 +478,48 @@ body.light-mode .dashboard-card.card-simple p {
   color: #212529 !important;
 }
 
+/* Navbar más compacto y adaptado */
+.navbar {
+  padding: 0.4rem 1rem !important;
+}
+
+.navbar-brand {
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.navbar-nav .nav-link {
+  font-size: 0.95rem;
+  padding: 6px 10px;
+}
+
+.navbar-toggler {
+  border: none;
+}
+
+.navbar-toggler:focus {
+  box-shadow: none;
+}
+
+/* En móviles: centrar y compactar */
+@media (max-width: 768px) {
+  .navbar-nav {
+    text-align: left;
+    padding-left: 10px;
+  }
+
+  .navbar-brand {
+    font-size: 0.95rem;
+  }
+
+  #themeToggle {
+    margin-top: 10px;
+  }
+
+  form.d-flex {
+    margin-top: 10px;
+  }
+}
 
 
 
