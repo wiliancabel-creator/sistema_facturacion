@@ -3,6 +3,7 @@
 <head>
   {% load static %}
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Mi Tienda{% endblock %}</title>
 
   <!-- Bootstrap primero -->
@@ -66,11 +67,11 @@
     </div>
   </nav>
 
-  <!-- Contenido dinámico -->
-<div class="container-fluid px-3 py-3">
-  {% block content %}
-  {% endblock %}
-</div>
+  <!-- Contenido dinámico SIN padding en móvil -->
+  <div class="container-fluid px-0">
+    {% block content %}
+    {% endblock %}
+  </div>
 
 
   <!-- Script de cambio de tema -->

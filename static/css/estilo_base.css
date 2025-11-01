@@ -521,6 +521,107 @@ body.light-mode .dashboard-card.card-simple p {
   }
 }
 
+/* === Ajuste responsive específico para móviles === */
+@media (max-width: 768px) {
+  /* Dashboard: tarjetas principales */
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .row > .col-md-3 {
+    flex: 0 0 32%;   /* 3 tarjetas por fila */
+    max-width: 32%;
+    margin: 4px;
+  }
+
+  /* Accesos rápidos */
+  .btn-group.mb-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .btn-group.mb-3 .btn {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  /* Texto más ajustado */
+  h4 {
+    font-size: 16px;
+    text-align: center;
+  }
+}
+
+/* === Adaptación completa a pantallas móviles (modo app) === */
+
+/* El body ocupará siempre todo el alto de la pantalla */
+html, body {
+  height: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* El contenedor principal se ajusta dinámicamente */
+.contenedor.dashboard-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: calc(100vh - 60px); /* Resta el navbar */
+  padding-bottom: 30px;
+}
+
+/* En móviles, ajusta el contenido para ocupar toda la vista */
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll; /* evita saltos visuales en móviles */
+  }
+
+  .contenedor.dashboard-container {
+    min-height: calc(100vh - 50px);
+    padding: 10px;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  /* Elimina márgenes innecesarios en los paneles */
+  .dashboard-cards,
+  .quick-access,
+  .tendencias {
+    margin-bottom: 10px;
+  }
+
+  /* Hace que las tarjetas y botones se distribuyan mejor */
+  .dashboard-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .quick-access {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    display: grid;
+  }
+
+  .quick-access .btn {
+    font-size: 13px;
+    padding: 10px 6px;
+    border-radius: 6px;
+  }
+
+  /* Centra todo visualmente como app */
+  .dashboard-container {
+    justify-content: space-between;
+  }
+}
+
 
 
 
