@@ -9,7 +9,7 @@ body {
     align-items: center;
 
     /* Fondo con imagen translúcida */
-    background: url("../img/fondo_llanta.jpg") no-repeat center center/cover;
+    background: url("../img/fondo_llanta1.jpg") no-repeat center center/cover;
     background-attachment: fixed;
 
     /* Oscurece ligeramente la imagen para resaltar el login */
