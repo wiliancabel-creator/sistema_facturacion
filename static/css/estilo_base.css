@@ -715,7 +715,7 @@ a, .btn, .nav-link {
 
 /* Panel rápido */
 .panel-rapido h6 {
-  color: #0e0d0d !important;
+  color: #fff !important;
 }
 
 .panel-rapido .btn {
@@ -805,7 +805,7 @@ body.light-mode form select::placeholder {
 
 /* Panel rápido */
 body.light-mode .panel-rapido h6 {
-  color: #ecf0f3 !important;
+  color: #0d0d0e !important;
   font-weight: 600;
 }
 
