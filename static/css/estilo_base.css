@@ -1,27 +1,15 @@
-/* === RESET PARA MÓVIL === */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow-x: hidden;
-}
-
 /* === Contenedor general === */
 .contenedor {
-  max-width: 100%;
-  margin: 20px 0;
-  padding: 15px 5px;
+  max-width: 1600px;
+  margin: 40px auto;
+  padding: 20px;
   background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(12px);
   border-radius: 12px;
   box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
   font-family: 'Segoe UI', sans-serif;
   transition: all 0.4s ease;
+  box-sizing: border-box;
 }
 
 /* === Títulos === */
@@ -52,6 +40,7 @@ form select {
   border-radius: 6px;
   background-color: rgba(255, 255, 255, 0.1);
   color: #fff;
+  box-sizing: border-box;
   transition: all 0.3s ease;
 }
 
@@ -75,26 +64,12 @@ button,
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 3px 10px rgba(0, 123, 255, 0.3);
-  text-decoration: none;
-  display: inline-block;
-  text-align: center;
 }
 
 button:hover,
 .btn:hover {
   background: linear-gradient(135deg, #0056b3, #0096c7);
   box-shadow: 0 4px 15px rgba(0, 150, 255, 0.4);
-}
-
-.btn-outline-light {
-  background: transparent;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  color: #fff;
-}
-
-.btn-outline-light:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .botones-acciones {
@@ -220,21 +195,102 @@ body.light-mode .panel-sombreado {
   background-color: rgba(255, 255, 255, 0.12);
 }
 
+
+
 /* === Tema oscuro (por defecto) === */
 body {
   background: linear-gradient(135deg, #1a1c1f, #2a2d33, #141619);
   background-attachment: fixed;
   color: #f1f1f1;
   transition: all 0.4s ease;
-  min-height: 100vh;
 }
 
 /* === Tema claro === */
 body.light-mode {
-  background: linear-gradient(135deg, #e8eef5, #f5f7fa);
+  background: linear-gradient(135deg, #f6f7f9, #e9ecef);
   color: #212529;
 }
 
+/* === Ajustes visuales modo claro === */
+body.light-mode .contenedor {
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode h2,
+body.light-mode h3,
+body.light-mode label {
+  color: #212529;
+}
+
+body.light-mode form input,
+body.light-mode form textarea,
+body.light-mode form select {
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  color: #212529;
+}
+
+body.light-mode form input:focus,
+body.light-mode form textarea:focus,
+body.light-mode form select:focus {
+  background-color: #ffffff;
+  border-color: #007bff;
+}
+
+body.light-mode .panel-sombreado {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .panel-rapido h6 {
+  color: #333;
+}
+
+body.light-mode .productos-box,
+body.light-mode .form-row {
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* === Responsividad === */
+@media (max-width: 1200px) {
+  .btn {
+    font-size: 15px;
+    padding: 10px 18px;
+  }
+}
+
+@media (max-width: 992px) {
+  .venta-layout {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .venta-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-sombreado, .panel-rapido {
+    margin-bottom: 20px;
+  }
+
+  form input,
+  form textarea,
+  form select {
+    font-size: 14px;
+  }
+
+  .btn {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  h2, h3, h6 {
+    font-size: 16px;
+  }
+}
 
 /* === Transiciones suaves === */
 .navbar, .container, .btn, .contenedor, .form-row, .productos-box {
@@ -274,6 +330,7 @@ body.light-mode {
   transition: background 0.2s ease;
 }
 
+/* === Bordes sutiles === */
 .tabla th {
   border-bottom: 2px solid rgba(255, 255, 255, 0.2);
   font-weight: 600;
@@ -303,6 +360,7 @@ body.light-mode .tabla tbody tr:hover {
   background: rgba(13, 110, 253, 0.1);
 }
 
+
 /* === Dashboard moderno === */
 .dashboard-container {
   width: 100%;
@@ -311,7 +369,7 @@ body.light-mode .tabla tbody tr:hover {
   padding: 25px;
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  gap: 35px;
 }
 
 /* Tarjetas principales */
@@ -349,26 +407,38 @@ body.light-mode .tabla tbody tr:hover {
 .card-productos { background: linear-gradient(135deg, #17a2b8, #00e0ff); }
 .card-productos-compra { background: linear-gradient(135deg, #ffc107, #ffb100); color: #333; }
 .card-clientes { background: linear-gradient(135deg, #dc3545, #ff6b6b); }
-.card-simple { background: rgba(255, 255, 255, 0.1); }
+.card-simple { background: rgba(255, 255, 255, 0.07); }
 
-/* Sección de accesos */
-.dashboard-access {
-  background: rgba(141, 54, 54, 0.06);
-  border-radius: 12px;
+/* Accesos rápidos */
+.quick-access {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
   padding: 20px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(8px);
 }
 
-.dashboard-access h3 {
-  margin-bottom: 15px;
+/* Botones */
+.quick-access .btn {
+  flex: 1 1 150px;
+  text-align: center;
+  padding: 12px 10px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #007bff, #00c6ff);
+  color: white;
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  transition: all 0.3s ease;
 }
 
-/* Accesos rápidos */
-.quick-access {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
+.quick-access .btn:hover {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, #0056b3, #0096c7);
 }
 
 /* Tendencias */
@@ -380,478 +450,528 @@ body.light-mode .tabla tbody tr:hover {
   backdrop-filter: blur(8px);
 }
 
-
-/* === RESPONSIVE - TABLET === */
-@media (max-width: 992px) {
-  .dashboard-cards {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-  }
-
-  .quick-access {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  /* Ajustar layout de venta en tablets */
-  .venta-layout {
-    grid-template-columns: 140px 300px 1fr 140px;
-    gap: 8px;
-    padding: 8px 3px;
-  }
-
-  .panel-rapido .btn {
-    font-size: 11px;
-    padding: 6px 4px;
-  }
-
-  .venta-layout > .panel-sombreado:first-of-type {
-    max-width: 300px;
-    padding: 12px;
-  }
-}
-
+/* Responsive */
 @media (max-width: 768px) {
-  .venta-layout {
-    grid-template-columns: 1fr;
-    gap: 15px;
-    padding: 10px;
+  .dashboard-container {
+    padding: 15px;
   }
 
-  .venta-layout > .panel-rapido {
-    max-width: 100%;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    padding: 0;
-  }
-
-  .venta-layout > .panel-rapido h6 {
-    grid-column: 1 / -1;
-  }
-
-  .venta-layout > .panel-sombreado:first-of-type {
-    max-width: 100%;
-  }
-
-  .panel-sombreado, .panel-rapido {
-    margin-bottom: 20px;
-  }
-}
-
-/* === MÓVIL HORIZONTAL (LANDSCAPE) === */
-@media (max-width: 926px) and (orientation: landscape) {
-  /* Dashboard en horizontal */
   .dashboard-cards {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 10px;
-  }
-
-  .dashboard-card {
-    padding: 12px 10px;
-    min-height: 70px;
-  }
-
-  .dashboard-card h4 {
-    font-size: 0.8rem !important;
+    grid-template-columns: 1fr 1fr;
   }
 
   .dashboard-card p {
-    font-size: 1.1rem !important;
+    font-size: 18px;
   }
 
-  /* Accesos rápidos en horizontal */
   .quick-access {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    flex-direction: column;
   }
 
   .quick-access .btn {
-    font-size: 0.85rem;
-    padding: 8px 6px;
-  }
-
-  /* Layout de venta en horizontal */
-  .venta-layout {
-    grid-template-columns: 140px 280px 1fr 140px !important;
-    gap: 8px;
-  }
-
-  .panel-rapido .btn {
-    font-size: 11px;
-    padding: 6px 4px;
-  }
-
-  /* Tabla de productos más visible */
-  .productos-box {
-    max-height: 40vh;
-  }
-
-  .form-row {
-    padding: 8px;
-    gap: 8px;
-  }
-
-  /* Navbar más compacto */
-  .navbar {
-    padding: 0.3rem 0.8rem !important;
-    min-height: 45px;
-  }
-
-  .navbar-brand {
-    font-size: 0.9rem;
-  }
-
-  .navbar-nav .nav-link {
-    font-size: 0.85rem;
-    padding: 6px 10px;
-  }
-
-  /* Contenedor sin márgenes verticales */
-  .contenedor {
-    margin: 5px 0 !important;
-    padding: 12px 8px !important;
-  }
-
-  .dashboard-container {
-    padding: 12px !important;
-    gap: 12px;
+    width: 100%;
   }
 }
 
-/* === MÓVIL VERTICAL OPTIMIZADO === */
-@media (max-width: 576px) {
-  /* Resetear padding del container-fluid */
-  .container-fluid {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+@media (max-width: 480px) {
+  .dashboard-cards {
+    grid-template-columns: 1fr;
   }
+}
 
-  /* Body sin márgenes */
-  body {
-    padding: 0;
-    margin: 0;
-  }
+/* === Corrección para modo claro en dashboard === */
+body.light-mode .dashboard-card {
+  color: #fff !important; /* letras blancas dentro de tarjetas */
+}
 
-  /* Navbar compacto */
-  .navbar {
-    padding: 0.4rem 0.8rem !important;
-    min-height: 50px;
+/* Asegurar contraste en las tarjetas neutras (blancas) */
+body.light-mode .dashboard-card.card-simple {
+  color: #212529 !important; /* texto oscuro en tarjetas blancas */
+}
+
+/* Ajustar títulos dentro de tarjetas coloridas */
+body.light-mode .dashboard-card h4 {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body.light-mode .dashboard-card p {
+  color: #fff !important;
+}
+
+/* Para las tarjetas blancas (card-simple) */
+body.light-mode .dashboard-card.card-simple h4,
+body.light-mode .dashboard-card.card-simple p {
+  color: #212529 !important;
+}
+
+/* Navbar más compacto y adaptado */
+.navbar {
+  padding: 0.4rem 1rem !important;
+}
+
+.navbar-brand {
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.navbar-nav .nav-link {
+  font-size: 0.95rem;
+  padding: 6px 10px;
+}
+
+.navbar-toggler {
+  border: none;
+}
+
+.navbar-toggler:focus {
+  box-shadow: none;
+}
+
+/* En móviles: centrar y compactar */
+@media (max-width: 768px) {
+  .navbar-nav {
+    text-align: left;
+    padding-left: 10px;
   }
 
   .navbar-brand {
     font-size: 0.95rem;
   }
 
-  .navbar-nav {
-    padding: 0.5rem 0;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    margin-top: 0.5rem;
-  }
-
-  .navbar-nav .nav-link {
-    font-size: 0.9rem;
-    padding: 8px 15px;
-  }
-
   #themeToggle {
-    margin: 8px 0;
-    width: 100%;
-    font-size: 0.9rem;
+    margin-top: 10px;
   }
 
-  /* Dashboard sin espacios */
-  .dashboard-container {
-    padding: 8px !important;
-    margin: 0 !important;
-    gap: 12px;
-    max-width: 100%;
+  form.d-flex {
+    margin-top: 10px;
   }
+}
 
-  .contenedor {
-    margin: 8px !important;
-    padding: 10px !important;
-    border-radius: 10px;
-  }
-
-  /* Tarjetas en 2 columnas */
-  .dashboard-cards {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px;
-  }
-
-  .dashboard-card {
-    padding: 10px 8px;
-    border-radius: 10px;
-    min-height: 80px;
+/* === Ajuste responsive específico para móviles === */
+@media (max-width: 768px) {
+  /* Dashboard: tarjetas principales */
+  .row {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     justify-content: center;
   }
 
-  .dashboard-card h4 {
-    font-size: 0.75rem !important;
-    margin-bottom: 4px;
-    line-height: 1.2;
+  .row > .col-md-3 {
+    flex: 0 0 32%;   /* 3 tarjetas por fila */
+    max-width: 32%;
+    margin: 4px;
   }
 
-  .dashboard-card p {
-    font-size: 1.2rem !important;
-    margin: 0;
-  }
-
-  /* Sección de accesos */
-  .dashboard-access {
-    padding: 12px;
-    margin: 0 8px;
-  }
-
-  .dashboard-access h3 {
-    font-size: 1rem;
-    margin-bottom: 10px;
-  }
-
-  /* Accesos rápidos en 2 columnas */
-  .quick-access {
-    grid-template-columns: repeat(2, 1fr);
+  /* Accesos rápidos */
+  .btn-group.mb-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 8px;
+    justify-content: center;
   }
 
-  .quick-access .btn {
-    padding: 10px 6px;
-    font-size: 0.8rem;
-    border-radius: 8px;
-  }
-
-  /* Títulos */
-  h2 {
-    font-size: 1.2rem !important;
-    margin-bottom: 12px;
-  }
-
-  h3 {
-    font-size: 1rem !important;
-    margin-bottom: 10px;
-  }
-
-  /* Tendencias */
-  .tendencias {
-    padding: 12px;
-    border-radius: 8px;
-    margin: 0 8px;
-  }
-
-  /* Tablas */
-  .tabla {
-    font-size: 0.8rem;
-  }
-
-  .tabla th,
-  .tabla td {
-    padding: 6px 8px;
-    font-size: 0.8rem;
-  }
-
-  /* Formularios */
-  form input,
-  form textarea,
-  form select {
-    font-size: 0.9rem;
+  .btn-group.mb-3 .btn {
+    font-size: 14px;
     padding: 8px;
   }
 
-  .btn {
-    font-size: 0.9rem;
-    padding: 10px 15px;
+  /* Texto más ajustado */
+  h4 {
+    font-size: 16px;
+    text-align: center;
   }
 }
 
-/* === MÓVIL MUY PEQUEÑO === */
-@media (max-width: 400px) {
-  .dashboard-card h4 {
-    font-size: 0.7rem !important;
+/* === Adaptación completa a pantallas móviles (modo app) === */
+
+/* El body ocupará siempre todo el alto de la pantalla */
+html, body {
+  height: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* El contenedor principal se ajusta dinámicamente */
+.contenedor.dashboard-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: calc(100vh - 60px); /* Resta el navbar */
+  padding-bottom: 30px;
+}
+
+/* En móviles, ajusta el contenido para ocupar toda la vista */
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll; /* evita saltos visuales en móviles */
   }
 
-  .dashboard-card p {
-    font-size: 1.1rem !important;
+  .contenedor.dashboard-container {
+    min-height: calc(100vh - 50px);
+    padding: 10px;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  /* Elimina márgenes innecesarios en los paneles */
+  .dashboard-cards,
+  .quick-access,
+  .tendencias {
+    margin-bottom: 10px;
+  }
+
+  /* Hace que las tarjetas y botones se distribuyan mejor */
+  .dashboard-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .quick-access {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    display: grid;
   }
 
   .quick-access .btn {
-    font-size: 0.75rem;
-    padding: 8px 4px;
+    font-size: 13px;
+    padding: 10px 6px;
+    border-radius: 6px;
+  }
+
+  /* Centra todo visualmente como app */
+  .dashboard-container {
+    justify-content: space-between;
+  }
+}
+
+
+
+/* === MÓVIL HORIZONTAL - LAYOUT DE VENTA 4 COLUMNAS === */
+@media (max-width: 926px) and (orientation: landscape) {
+  /* Layout de venta en horizontal - 4 COLUMNAS VISIBLES */
+  .venta-layout {
+    grid-template-columns: 120px 240px 1fr 120px !important;
+    gap: 6px !important;
+    padding: 5px 2px !important;
+  }
+
+  
+
+  .venta-layout > .panel-rapido:first-child,
+  .venta-layout > .panel-rapido:last-child {
+    max-width: 120px !important;
+    padding: 0 2px !important;
+  }
+
+  .venta-layout > .panel-sombreado:first-of-type {
+    max-width: 240px !important;
+    padding: 10px !important;
+  }
+
+  /* Botones laterales más pequeños */
+  .venta-layout .panel-rapido .btn {
+    font-size: 9px !important;
+    padding: 4px 2px !important;
+    margin-bottom: 3px !important;
+  }
+
+  .venta-layout .panel-rapido h6 {
+    font-size: 10px !important;
+    margin-bottom: 4px !important;
+  }
+
+  
+  /* Panel de búsqueda/cliente compacto */
+  .venta-layout > .panel-sombreado:first-of-type h3 {
+    font-size: 13px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .venta-layout > .panel-sombreado:first-of-type label {
+    font-size: 11px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .venta-layout > .panel-sombreado:first-of-type input,
+  .venta-layout > .panel-sombreado:first-of-type select {
+    padding: 5px !important;
+    font-size: 12px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .venta-layout > .panel-sombreado:first-of-type .btn {
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+  }
+
+  /* Tabla de productos optimizada */
+  .venta-layout .productos-box {
+    max-height: 50vh !important;
+    padding: 6px !important;
+  }
+
+  .venta-layout .form-row {
+    padding: 5px !important;
+    gap: 5px !important;
+    font-size: 12px !important;
+  }
+
+  .venta-layout .form-row input {
+    font-size: 12px !important;
+    padding: 5px !important;
+  }
+
+  /* Navbar compacto en horizontal */
+  .navbar {
+    padding: 0.3rem 0.6rem !important;
+    min-height: 42px !important;
   }
 
   .navbar-brand {
-    font-size: 0.85rem;
+    font-size: 0.85rem !important;
+  }
+
+  .navbar-nav .nav-link {
+    font-size: 0.8rem !important;
+    padding: 5px 8px !important;
+  }
+
+  /* Contenedor ajustado */
+  .contenedor {
+    margin: 3px 0 !important;
+    padding: 8px 3px !important;
   }
 }
 
-/* === FIX FINAL: CONTRASTE Y VISIBILIDAD DE TEXTO (LIGHT / DARK MODE) === */
+/* === LAYOUT COTIZACIONES - 3 COLUMNAS OPTIMIZADO === */
 
-/* ======== MODO OSCURO (por defecto) ======== */
-body {
-  color: #f1f1f1;
+/* Contenedor principal SOLO para cotizaciones */
+.cotizacion-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr 140px;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  padding: 10px 5px;
+  align-items: start;
 }
 
-h1, h2, h3, h4, h5, h6, label, p, span, strong {
-  color: #f1f1f1;
+/* Columna izquierda - Búsqueda y cliente */
+.cotizacion-layout .columna-izquierda {
+  max-width: 240px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
 }
 
-a, .btn, .nav-link {
-  color: #fff !important;
+.cotizacion-layout .columna-izquierda h4 {
+  font-size: 14px;
+  margin-bottom: 10px;
+  margin-top: 15px;
 }
 
-/* Botones claros (outline) */
-.btn-outline-light {
-  color: #fff !important;
-  border-color: rgba(255, 255, 255, 0.5);
+.cotizacion-layout .columna-izquierda label {
+  font-size: 12px;
+  margin-bottom: 4px;
 }
 
-.btn-outline-light:hover {
-  background: rgba(255, 255, 255, 0.15);
+.cotizacion-layout .columna-izquierda input,
+.cotizacion-layout .columna-izquierda select {
+  font-size: 13px;
+  padding: 6px;
+  margin-bottom: 8px;
 }
 
-/* Panel rápido */
-.panel-rapido h6 {
-  color: #fff !important;
+.cotizacion-layout .columna-izquierda .btn {
+  font-size: 13px;
+  padding: 8px 12px;
 }
 
-.panel-rapido .btn {
-  color: #fff !important;
+/* Columna centro - Productos (ocupa todo el espacio) */
+.cotizacion-layout .columna-centro {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
 }
 
-/* Panel sombreado */
-.panel-sombreado {
-  color: #f5f5f5;
+.cotizacion-layout .columna-centro h4 {
+  font-size: 16px;
+  margin-bottom: 12px;
 }
 
-/* Formularios */
-form input,
-form textarea,
-form select {
-  color: #fff;
+.cotizacion-layout #form-container {
+  max-height: 60vh;
+  overflow-y: auto;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px;
 }
 
-form input::placeholder,
-form textarea::placeholder,
-form select::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+/* Columna derecha - Accesos rápidos */
+.cotizacion-layout .columna-derecha {
+  max-width: 140px;
+  text-align: center;
+  padding: 0 3px;
 }
 
-/* Dashboard */
-.dashboard-card h4,
-.dashboard-card p {
-  color: #fff !important;
+.cotizacion-layout .columna-derecha h6 {
+  font-size: 13px;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #d0d0d0;
 }
 
-.dashboard-card.card-simple h4,
-.dashboard-card.card-simple p {
-  color: #f1f1f1 !important;
+.cotizacion-layout .columna-derecha .btn {
+  width: 100%;
+  font-size: 11px;
+  padding: 6px 4px;
+  margin-bottom: 6px;
+  border-radius: 6px;
 }
 
-/* ======== MODO CLARO ======== */
-body.light-mode {
-  color: #1c1c1c;
+/* Modo claro - Cotizaciones */
+body.light-mode .cotizacion-layout .columna-izquierda,
+body.light-mode .cotizacion-layout .columna-centro {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
-body.light-mode h1,
-body.light-mode h2,
-body.light-mode h3,
-body.light-mode h4,
-body.light-mode h5,
-body.light-mode h6,
-body.light-mode label,
-body.light-mode p,
-body.light-mode span {
-  color: #212529 !important;
+body.light-mode .cotizacion-layout .columna-derecha h6 {
+  color: #212529;
+  font-weight: 600;
 }
 
-body.light-mode a,
-body.light-mode .nav-link {
-  color: #0d6efd !important;
-}
-
-/* Botones */
-body.light-mode .btn {
-  color: #fff !important;
-}
-
-body.light-mode .btn-outline-light {
-  color: #0d6efd !important;
-  border-color: rgba(0, 0, 0, 0.3);
-}
-
-body.light-mode .btn-outline-light:hover {
-  background: rgba(13, 110, 253, 0.1);
-  border-color: #0d6efd;
-}
-
-/* Formularios */
-body.light-mode form input,
-body.light-mode form textarea,
-body.light-mode form select {
-  color: #212529 !important;
+body.light-mode .cotizacion-layout #form-container {
   background-color: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
-body.light-mode form input::placeholder,
-body.light-mode form textarea::placeholder,
-body.light-mode form select::placeholder {
-  color: #6c757d;
+/* === RESPONSIVE COTIZACIONES === */
+
+/* Tablet */
+@media (max-width: 992px) {
+  .cotizacion-layout {
+    grid-template-columns: 220px 1fr 130px;
+    gap: 8px;
+  }
+
+  .cotizacion-layout .columna-izquierda {
+    max-width: 220px;
+    padding: 12px;
+  }
+
+  .cotizacion-layout .columna-derecha {
+    max-width: 130px;
+  }
+
+  .cotizacion-layout .columna-derecha .btn {
+    font-size: 10px;
+    padding: 5px 3px;
+  }
 }
 
-/* Panel rápido */
-body.light-mode .panel-rapido h6 {
-  color: #0d0d0e !important;
-  font-weight: 600;
+/* Móvil vertical */
+@media (max-width: 768px) {
+  .cotizacion-layout {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .cotizacion-layout .columna-izquierda,
+  .cotizacion-layout .columna-centro,
+  .cotizacion-layout .columna-derecha {
+    max-width: 100%;
+  }
+
+  .cotizacion-layout .columna-derecha {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .cotizacion-layout .columna-derecha h6 {
+    grid-column: 1 / -1;
+  }
 }
 
-body.light-mode .panel-rapido .btn {
-  color: #fff !important;
+/* Móvil horizontal */
+@media (max-width: 926px) and (orientation: landscape) {
+  .cotizacion-layout {
+    grid-template-columns: 200px 1fr 120px !important;
+    gap: 6px !important;
+    padding: 5px 2px !important;
+  }
+
+  .cotizacion-layout .columna-izquierda {
+    max-width: 200px !important;
+    padding: 8px !important;
+  }
+
+  .cotizacion-layout .columna-izquierda h4 {
+    font-size: 12px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .cotizacion-layout .columna-izquierda label {
+    font-size: 10px !important;
+  }
+
+  .cotizacion-layout .columna-izquierda input,
+  .cotizacion-layout .columna-izquierda select {
+    font-size: 11px !important;
+    padding: 4px !important;
+    margin-bottom: 5px !important;
+  }
+
+  .cotizacion-layout .columna-izquierda .btn {
+    font-size: 11px !important;
+    padding: 5px 8px !important;
+  }
+
+  .cotizacion-layout .columna-centro {
+    padding: 8px !important;
+  }
+
+  .cotizacion-layout .columna-centro h4 {
+    font-size: 13px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .cotizacion-layout #form-container {
+    max-height: 45vh !important;
+    padding: 6px !important;
+  }
+
+  .cotizacion-layout .columna-derecha {
+    max-width: 120px !important;
+  }
+
+  .cotizacion-layout .columna-derecha h6 {
+    font-size: 10px !important;
+  }
+
+  .cotizacion-layout .columna-derecha .btn {
+    font-size: 9px !important;
+    padding: 4px 2px !important;
+    margin-bottom: 3px !important;
+  }
+
+  .cotizacion-layout .form-row {
+    padding: 5px !important;
+    gap: 5px !important;
+    font-size: 11px !important;
+  }
 }
-
-/* Dashboard */
-body.light-mode .dashboard-card {
-  color: #fff !important;
-}
-
-body.light-mode .dashboard-card.card-simple {
-  color: #212529 !important;
-}
-
-/* Títulos */
-body.light-mode .dashboard-card h4,
-body.light-mode .dashboard-card p {
-  color: #fff !important;
-}
-
-body.light-mode .dashboard-card.card-simple h4,
-body.light-mode .dashboard-card.card-simple p {
-  color: #212529 !important;
-}
-
-/* Ajuste general de contraste en inputs */
-body.light-mode input:focus,
-body.light-mode textarea:focus,
-body.light-mode select:focus {
-  border-color: #0d6efd;
-}
-
-/* Navbar */
-body.light-mode .navbar,
-body.light-mode .navbar-brand,
-body.light-mode .nav-link {
-  color: #fff !important;
-}
-
-
-
-
-
-
-
-
-
