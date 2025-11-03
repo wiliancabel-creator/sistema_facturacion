@@ -6,56 +6,74 @@ Factura N°. {{ venta.numero_factura|stringformat:"05d" }}
 {% block content %}
 <style>
   .recibo {
-    max-width: 320px;
-    margin: auto;
-    font-family: monospace;
-    font-size: 13px;
-    background: #fff;
-    padding: 10px;
-    border: 1px dashed #ccc;
-  }
+  max-width: 320px;
+  margin: auto;
+  font-family: monospace;
+  font-size: 13px;
+  background: var(--bs-body-bg, #fff);
+  color: var(--bs-body-color, #212529);
+  padding: 10px;
+  border: 1px dashed var(--bs-border-color, #ccc);
+}
 
-  .recibo h3,
-  .recibo h4,
-  .recibo p {
-    text-align: center;
-    margin: 5px 0;
-  }
+.recibo h3,
+.recibo h4,
+.recibo p {
+  text-align: center;
+  margin: 5px 0;
+  color: var(--bs-body-color, #212529);
+}
 
-  .recibo .datos-factura {
-    margin: 10px 0;
-    font-size: 14px;
-  }
+.recibo .datos-factura {
+  margin: 10px 0;
+  font-size: 14px;
+}
 
-  .recibo table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
+.recibo table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
 
-  .recibo th,
-  .recibo td {
-    border-bottom: 1px dashed #ccc;
-    padding: 4px;
-    text-align: left;
-  }
+.recibo th,
+.recibo td {
+  border-bottom: 1px dashed var(--bs-border-color, #ccc);
+  padding: 4px;
+  text-align: left;
+  color: var(--bs-body-color, #212529);
+}
 
-  .recibo .total {
-    text-align: right;
-    font-weight: bold;
-    margin-top: 10px;
-  }
+.recibo .total {
+  text-align: right;
+  font-weight: bold;
+  margin-top: 10px;
+}
 
-  .recibo .firma {
-    margin-top: 30px;
-    text-align: center;
-  }
+.recibo .firma {
+  margin-top: 30px;
+  text-align: center;
+}
 
-  @media print {
-    .btn-imprimir {
-      display: none;
-    }
+.linea-separadora {
+  border-color: var(--bs-border-color, #ccc);
+}
+
+@media print {
+  .btn-imprimir {
+    display: none;
   }
+  
+  /* Forzar fondo blanco al imprimir */
+  .recibo {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .recibo h3, .recibo h4, .recibo p,
+  .recibo th, .recibo td {
+    color: black !important;
+  }
+}
 </style>
 
 <div class="recibo">

@@ -976,3 +976,91 @@ body.light-mode .cotizacion-layout #form-container {
   }
 }
 
+/* Estilos para Select2 en modo oscuro */
+.select2-container--default .select2-selection--single {
+    background-color: var(--bs-body-bg, #fff);
+    border-color: var(--bs-border-color, #ced4da);
+    color: var(--bs-body-color, #212529);
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: var(--bs-body-color, #212529);
+}
+
+.select2-dropdown {
+    background-color: var(--bs-body-bg, #fff);
+    border-color: var(--bs-border-color, #ced4da);
+}
+
+.select2-container--default .select2-results__option {
+    background-color: var(--bs-body-bg, #fff);
+    color: var(--bs-body-color, #212529);
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--bs-primary, #0d6efd);
+    color: white;
+}
+
+.select2-search--dropdown .select2-search__field {
+    background-color: var(--bs-body-bg, #fff);
+    border-color: var(--bs-border-color, #ced4da);
+    color: var(--bs-body-color, #212529);
+}
+
+/* Tabla de productos estilo compacto */
+#tabla-productos {
+    font-size: 13px;
+}
+
+#tabla-productos thead th {
+    background-color: var(--bs-secondary-bg, #6c757d);
+    color: var(--bs-body-color, #212529);
+    font-weight: 600;
+    padding: 8px;
+    font-size: 12px;
+}
+
+#tabla-productos tbody td {
+    padding: 6px;
+    vertical-align: middle;
+}
+
+#tabla-productos .producto-nombre {
+    font-size: 13px;
+    color: var(--bs-body-color, #212529);
+}
+
+#tabla-productos input[type="number"] {
+    height: 32px;
+    font-size: 12px;
+    padding: 4px 8px;
+    text-align: center;
+}
+
+#tabla-productos .subtotal-cell {
+    font-weight: 600;
+    text-align: right;
+    color: var(--bs-body-color, #212529);
+}
+
+#tabla-productos .btn-mini {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#tabla-productos tfoot th {
+    background-color: var(--bs-tertiary-bg, #e9ecef);
+    font-weight: 700;
+    padding: 10px;
+}
+
+#tabla-productos tfoot #total-venta {
+    font-size: 16px;
+    color: var(--bs-success, #198754);
+}
