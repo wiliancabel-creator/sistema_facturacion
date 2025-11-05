@@ -5,7 +5,51 @@
     <meta charset="UTF-8">
     <title>Iniciar Sesión | SISTEMAS FAJARDO</title>
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <style>
+        /* === ESTILO ADICIONAL PARA INFO Y WHATSAPP === */
+        .info-demo {
+            background: rgba(0, 123, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-top: 15px;
+            text-align: center;
+            color: #f1f1f1;
+            font-size: 0.9rem;
+        }
+
+        .info-demo strong {
+            color: #00c3ff;
+        }
+
+        .whatsapp-section {
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .whatsapp-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        .whatsapp-link:hover {
+            background: linear-gradient(135deg, #128C7E, #075E54);
+            transform: scale(1.05);
+        }
+
+        .whatsapp-link span {
+            margin-left: 6px;
+        }
+    </style>
 </head>
+
 <body>
     <div class="login-container">
         <h2>🔐 Iniciar Sesión en Demo</h2>
@@ -25,7 +69,33 @@
             <button type="submit">Ingresar</button>
         </form>
 
+        <!-- 🧾 CREDENCIALES DE PRUEBA -->
+        <div class="info-demo">
+            <p>💡 <strong>Credenciales de acceso para el demo:</strong></p>
+            <p>Usuario: <strong>demo</strong><br>
+               Contraseña: <strong>demo2025</strong></p>
+        </div>
+
+        <!-- 💬 CONTACTO WHATSAPP -->
+        <div class="whatsapp-section">
+            <a class="whatsapp-link" href="https://wa.me/50487792746?text=Hola%20vi%20tu%20demo%20del%20sistema%20de%20facturación%20y%20me%20interesa%20más%20información" target="_blank">
+                💬 Contactar por WhatsApp <span>→</span>
+            </a>
+        </div>
+
         <p class="footer">SISTEMAS FAJARDO © {{ now|date:"Y" }}</p>
     </div>
+
+    <script>
+  // 📱 Ajuste de altura real en móviles (soluciona el espacio extra)
+  function ajustarAltura() {
+      document.body.style.height = window.innerHeight + "px";
+  }
+
+  window.addEventListener("resize", ajustarAltura);
+  window.addEventListener("orientationchange", ajustarAltura);
+  ajustarAltura();
+</script>
+
 </body>
 </html>

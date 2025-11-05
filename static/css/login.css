@@ -133,19 +133,88 @@ button:hover {
     color: #ccc;
 }
 
-/* === Responsividad === */
+
+/* === Ajuste perfecto para pantallas móviles === */
 @media (max-width: 768px) {
+    body {
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding-top: 12vh;
+        height: auto; /* ✅ Permite scroll natural en móviles */
+    }
+
     .login-container {
-        width: 85%;
-        padding: 30px 25px;
+        width: 90%;
+        max-width: 380px;
+        padding: 25px 22px;
+        margin: 0 auto 5vh auto; /* ✅ Centrado visual y buen espacio inferior */
     }
 
     .login-container h2 {
         font-size: 22px;
+        margin-bottom: 18px;
     }
 
-    button {
-        font-size: 14px;
+    input, button {
+        font-size: 15px;
+    }
+
+    .info-demo {
+        font-size: 0.85rem;
+        padding: 8px 12px;
+    }
+
+    .whatsapp-link {
+        padding: 8px 14px;
+        font-size: 0.9rem;
+    }
+
+    .footer {
+        font-size: 0.8rem;
+        margin-top: 15px;
     }
 }
 
+
+/* === Centrado perfecto en móviles === */
+@media (max-width: 768px) {
+    body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100dvh; /* ✅ Nuevo estándar moderno */
+        padding: 0 10px;
+    }
+
+    .login-container {
+        width: 92%;
+        max-width: 380px;
+        margin: 0 auto;
+        padding: 25px 20px;
+        border-radius: 12px;
+    }
+
+    .login-container h2 {
+        font-size: 22px;
+        margin-bottom: 15px;
+    }
+
+    .info-demo {
+        font-size: 0.85rem;
+        padding: 8px 10px;
+    }
+
+    .footer {
+        margin-top: 10px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 768px) {
+    body::before {
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(4px);
+    }
+}
