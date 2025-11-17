@@ -18,13 +18,14 @@ class Usuario(AbstractUser):
 
 # 2. Cliente
 class Cliente(models.Model):
-    nombre    = models.CharField(max_length=100)
-    direccion = models.CharField(max_length=200, blank=True)
-    telefono  = models.CharField(max_length=20, blank=True)
-    correo    = models.EmailField(blank=True)
+    nombre = models.CharField(max_length=150)
+    rtn = models.CharField(max_length=20, blank=True, null=True)
+    direccion = models.CharField(max_length=255, blank=True, null=True)
+    telefono = models.CharField(max_length=20, blank=True, null=True)
 
     def __str__(self):
         return self.nombre
+
 
 
 # 3. Catálogo: categoría, proveedor y CAI
@@ -45,42 +46,38 @@ class Proveedor(models.Model):
         return self.nombre
 
 
-class Cai(models.Model):
-    codigo               = models.CharField("Código CAI", max_length=50, unique=True)
-    rango_inicial        = models.PositiveIntegerField("Correlativo inicial")
-    rango_final          = models.PositiveIntegerField("Correlativo final")
-    correlativo_actual   = models.PositiveIntegerField("Siguiente correlativo")
-    fecha_limite         = models.DateField("Fecha límite de emisión")
-    activo               = models.BooleanField("Activo", default=True)
-
-    def __str__(self):
-        return f"{self.codigo} — {self.correlativo_actual}/{self.rango_final}"
-
 
 # 4. Producto UNIFICADO Y CORREGIDO
 class Producto(models.Model):
+    TIPO_IMPUESTO_CHOICES = [
+        ('E', 'Exento'),
+        ('G15', 'Gravado 15%'),
+        ('G18', 'Gravado 18%'),
+        ('EXO', 'Exonerado'),  # si necesitas distinguir
+    ]
+
     codigo       = models.CharField(max_length=50, unique=True, verbose_name="Código o ID")
     codigo_barra = models.CharField(max_length=100, unique=True, blank=True, null=True, verbose_name="Código de barra")
     nombre       = models.CharField(max_length=100)
     descripcion  = models.TextField(blank=True)
     precio       = models.DecimalField(max_digits=10, decimal_places=2)
     stock        = models.IntegerField(default=0)
-    categoria    = models.ForeignKey(Categoria, on_delete=models.CASCADE, null=True, blank=True)  # Temporal
+    categoria    = models.ForeignKey('Categoria', on_delete=models.CASCADE, null=True, blank=True)
     activo       = models.BooleanField(default=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)  # Temporal
+    fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    tipo_impuesto = models.CharField(max_length=4, choices=TIPO_IMPUESTO_CHOICES, default='E')
 
     def __str__(self):
         return f"{self.nombre} - L{self.precio} ({self.codigo})"
-    
+
     @property
     def necesita_restock(self):
         return self.stock <= 5
-    
+
     class Meta:
         ordering = ['nombre']
         verbose_name = "Producto"
         verbose_name_plural = "Productos"
-
 
 
 class Cotizacion(models.Model):
@@ -113,13 +110,20 @@ class DetalleCotizacion(models.Model):
 
 
 
-# 5. Venta 
 class Venta(models.Model):
     fecha = models.DateTimeField(auto_now_add=True)
-    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+
+    # Campos fiscales nuevos
+    subtotal_exento = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    subtotal_g15 = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    subtotal_g18 = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+
+    impuesto_15 = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    impuesto_18 = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
 
     cliente = models.ForeignKey(
-        'Cliente',  # o core.Cliente si está en otro app
+        'Cliente',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -131,20 +135,52 @@ class Venta(models.Model):
         choices=[('contado', 'Contado'), ('credito', 'Crédito')],
         default='contado'
     )
-
+    
     cai = models.ForeignKey(
-        'CAI',
+        'Cai',
         on_delete=models.SET_NULL,
         null=True,
         blank=True
     )
 
-    numero_factura = models.PositiveIntegerField(null=True, blank=True)
+    numero_factura = models.CharField(max_length=30, null=True, blank=True)
 
     def __str__(self):
-        num = f"#{self.numero_factura}" if self.numero_factura else "(sin nº)"
-        return f"Venta {num} – {self.fecha.strftime('%d/%m/%Y')}"
+        return f"Venta #{self.numero_factura or 'sin número'}"
 
+
+
+class Cai(models.Model):
+    codigo = models.CharField("Código CAI", max_length=50, unique=True)
+
+    prefijo = models.CharField("Prefijo SAR", max_length=20, blank=True, null=True)
+
+    rango_inicial = models.PositiveIntegerField("Correlativo inicial")
+    rango_final = models.PositiveIntegerField("Correlativo final")
+    correlativo_actual = models.PositiveIntegerField("Siguiente correlativo")
+
+    fecha_limite = models.DateField("Fecha límite de emisión")
+    activo = models.BooleanField("Activo", default=True)
+
+
+    def asignar_siguiente_correlativo(self):
+        """Aumenta correlativo y valida rango SAR"""
+        if self.correlativo_actual > self.rango_final:
+            raise ValueError("CAI fuera del rango permitido")
+
+        correlativo = self.correlativo_actual
+        self.correlativo_actual += 1
+        self.save(update_fields=['correlativo_actual'])
+        return correlativo
+
+
+    def get_numero_formateado(self, numero):
+        """Devuelve prefijo + correlativo de 8 dígitos"""
+        correlativo = str(numero).zfill(8)
+        pref = self.prefijo if self.prefijo else ""
+        return f"{pref}{correlativo}"
+
+  
 
 class DetalleVenta(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name='detalles')
@@ -152,13 +188,31 @@ class DetalleVenta(models.Model):
     cantidad = models.IntegerField()
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)  # precio original
     descuento = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # % descuento
-    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))  # subtotal sin impuesto
+    impuesto = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))  # monto de impuesto (ISV)
+    total_linea = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))  # subtotal + impuesto
 
     def save(self, *args, **kwargs):
         precio_final = self.precio_unitario
         if self.descuento > 0:
-            precio_final = precio_final - (precio_final * (self.descuento / 100))
-        self.subtotal = self.cantidad * precio_final
+            precio_final = precio_final - (precio_final * (self.descuento / Decimal('100')))
+
+        # subtotal sin impuesto
+        self.subtotal = (Decimal(self.cantidad) * precio_final).quantize(Decimal('0.01'))
+
+        # determinar impuesto según tipo del producto
+        tipo = self.producto.tipo_impuesto if self.producto and hasattr(self.producto, 'tipo_impuesto') else 'E'
+
+        impuesto_amount = Decimal('0.00')
+        if tipo == 'G15':
+            impuesto_amount = (self.subtotal * Decimal('0.15')).quantize(Decimal('0.01'))
+        elif tipo == 'G18':
+            impuesto_amount = (self.subtotal * Decimal('0.18')).quantize(Decimal('0.01'))
+        # exento o exonerado -> impuesto 0
+
+        self.impuesto = impuesto_amount
+        self.total_linea = (self.subtotal + self.impuesto).quantize(Decimal('0.01'))
+
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -244,6 +298,22 @@ class PagoEmpleado(models.Model):
 
     def __str__(self):
         return f"Pago {self.monto} a {self.empleado.nombre} el {self.fecha_pago}"
+
+
+class EmpresaConfig(models.Model):
+    nombre = models.CharField(max_length=150)
+    rtn = models.CharField(max_length=20)
+    direccion = models.CharField(max_length=255)
+    telefono = models.CharField(max_length=20, blank=True, null=True)
+    correo = models.CharField(max_length=150, blank=True, null=True)
+
+    # Para que solo exista 1 registro
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return "Configuración del negocio"
 
 
    

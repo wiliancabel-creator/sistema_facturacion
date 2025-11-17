@@ -1,14 +1,13 @@
 {% extends 'base.html' %}
-{% block title %}Registrar Cliente{% endblock %}
 {% block content %}
 
 <div class="container mt-4">
-  <h2 class="text-center mb-4">🧑‍💼 Registrar Cliente</h2>
+  <h2 class="text-center mb-4">⚙️ Configuración del negocio</h2>
 
   <form method="post">
     {% csrf_token %}
 
-    <label>Nombre:</label>
+    <label>Nombre del negocio:</label>
     {{ form.nombre }}
 
     <label>RTN:</label>
@@ -20,11 +19,13 @@
     <label>Teléfono:</label>
     {{ form.telefono }}
 
-    <button class="btn btn-primary mt-3">💾 Guardar Cliente</button>
+    <label>Correo:</label>
+    {{ form.correo }}
+
+    <button class="btn btn-primary mt-3">
+      💾 Guardar cambios
+    </button>
   </form>
 </div>
- 
 
-{% endblock %}   
-
-
+{% endblock %}

@@ -27,7 +27,9 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth import authenticate, login
 from django.http import JsonResponse
 from django.db import transaction
-
+from .utils import monto_en_letras
+from .models import EmpresaConfig
+from .forms import EmpresaConfigForm
 
 
 @login_required
@@ -321,7 +323,7 @@ def crear_venta(request):
         cliente_form = ClienteVentaForm(request.POST)
         formset = DetalleVentaFormSet(request.POST)
 
-        # Filtrar formularios con producto y cantidad > 0
+        # Filtrar formularios válidos
         forms_validos = [
             f for f in formset
             if f.is_valid()
@@ -335,31 +337,36 @@ def crear_venta(request):
                 with transaction.atomic():
                     venta = cliente_form.save(commit=False)
 
-                    # 🔹 Obtener el CAI activo (si existe)
+                   # Obtener CAI activo
                     cai_activo = Cai.objects.filter(activo=True).order_by('-id').first()
 
                     if cai_activo:
-                        # Validar rango
-                        if cai_activo.correlativo_actual > cai_activo.rango_final:
+                        try:
+                            # bloquea correlativo y aumenta de forma SEGURA
+                            correlativo = cai_activo.asignar_siguiente_correlativo()
+                            
+                            venta.cai = cai_activo
+                            venta.numero_factura = cai_activo.get_numero_formateado(correlativo)
+
+                        except ValueError:
                             messages.error(request, "El CAI activo ha alcanzado su rango final.")
                             return redirect('crear_venta')
 
-                        # Asignar CAI y número de factura
-                        venta.cai = cai_activo
-                        venta.numero_factura = cai_activo.correlativo_actual
-
-                        # Incrementar correlativo para la próxima venta
-                        cai_activo.correlativo_actual += 1
-                        cai_activo.save()
                     else:
-                        # ⚠️ No hay CAI activo → permitir la venta igual
+                        # No hay CAI activo
                         venta.cai = None
                         venta.numero_factura = None
 
-                    venta.total = Decimal('0.00')
-                    venta.save()
 
-                    total_venta = Decimal('0.00')
+                    venta.total = Decimal('0.00')
+                    # inicializar acumuladores fiscales
+                    subtotal_exento = Decimal('0.00')
+                    subtotal_g15 = Decimal('0.00')
+                    subtotal_g18 = Decimal('0.00')
+                    impuesto_15 = Decimal('0.00')
+                    impuesto_18 = Decimal('0.00')
+
+                    venta.save()
 
                     for form in forms_validos:
                         producto = form.cleaned_data['producto']
@@ -375,17 +382,32 @@ def crear_venta(request):
                             venta=venta,
                             producto=producto,
                             cantidad=cantidad,
-                            precio_unitario=precio_unitario,  # 👈 precio original
-                            descuento=descuento               # 👈 % descuento
+                            precio_unitario=precio_unitario,
+                            descuento=descuento
                         )
+
+                        # los campos subtotal, impuesto y total_linea se calculan en save()
+                        # acumular según tipo de impuesto del producto
+                        tipo = producto.tipo_impuesto
+                        if tipo == 'G15':
+                            subtotal_g15 += detalle.subtotal
+                            impuesto_15 += detalle.impuesto
+                        elif tipo == 'G18':
+                            subtotal_g18 += detalle.subtotal
+                            impuesto_18 += detalle.impuesto
+                        else:  # Exento o EXO
+                            subtotal_exento += detalle.subtotal
 
                         producto.stock -= cantidad
                         producto.save()
 
-                        total_venta += detalle.subtotal  # 👈 usamos el subtotal calculado en save()
-
-                    # 👇 Fuera del for
-                    venta.total = total_venta
+                    # guardar totales en venta
+                    venta.subtotal_exento = subtotal_exento
+                    venta.subtotal_g15 = subtotal_g15
+                    venta.subtotal_g18 = subtotal_g18
+                    venta.impuesto_15 = impuesto_15
+                    venta.impuesto_18 = impuesto_18
+                    venta.total = (subtotal_exento + subtotal_g15 + subtotal_g18 + impuesto_15 + impuesto_18).quantize(Decimal('0.01'))
                     venta.save()
 
                     # Si es crédito
@@ -398,31 +420,21 @@ def crear_venta(request):
                             estado='pendiente'
                         )
 
-                    # Mensaje dinámico según haya CAI o no
                     if venta.numero_factura:
-                        messages.success(
-                            request,
-                            f'✅ Venta registrada exitosamente. Factura #{venta.numero_factura} – Total: L{total_venta}'
-                        )
+                        messages.success(request, f'✅ Venta registrada exitosamente. Factura #{venta.numero_factura} – Total: L{venta.total}')
                     else:
-                        messages.success(
-                            request,
-                            f'✅ Venta registrada exitosamente (sin CAI asignado). Total: L{total_venta}'
-                        )
+                        messages.success(request, f'✅ Venta registrada exitosamente (sin CAI asignado). Total: L{venta.total}')
 
-                    return redirect('resumen_ventas')    
+                    return redirect('resumen_ventas')
 
             except Exception as e:
                 messages.error(request, f'❌ Error al procesar la venta: {str(e)}')
-
         else:
             if not cliente_form.is_valid():
                 messages.error(request, 'Error en los datos del cliente.')
             if not forms_validos:
                 messages.error(request, 'Debe agregar al menos un producto válido.')
-            # Si no hay productos válidos, mostrar solo 1 fila vacía
             formset = DetalleVentaFormSet()
-
     else:
         cliente_form = ClienteVentaForm()
         formset = DetalleVentaFormSet()
@@ -434,7 +446,6 @@ def crear_venta(request):
         'productos': productos,
     }
     return render(request, 'crear_venta.html', context)
-
 
 
 @login_required
@@ -479,24 +490,37 @@ def resumen_compras(request):
         'total_general': total_general,
         'fecha': fecha
     })
+    
 
 @login_required
-@permission_required('core.view_venta', raise_exception=True)
 def factura(request, venta_id):
     venta = get_object_or_404(Venta, id=venta_id)
-    detalles = DetalleVenta.objects.filter(venta=venta)
+    detalles = DetalleVenta.objects.filter(venta=venta).select_related('producto')
 
+    # Fecha de vencimiento para crédito
     fecha_vencimiento = None
     if venta.tipo_pago.lower() == "credito":
-        cuenta = CuentaPorCobrar.objects.filter(venta=venta).first()
+        cuenta = venta.cuentaporcobrar_set.first()
         if cuenta:
             fecha_vencimiento = cuenta.fecha_vencimiento
+
+    # Convertir total a letras
+    total_letras = monto_en_letras(venta.total)
+
+    # Obtener configuración del negocio
+    try:
+        empresa = EmpresaConfig.objects.get(pk=1)
+    except EmpresaConfig.DoesNotExist:
+        empresa = None  # Evita error si aún no han configurado nada
 
     return render(request, 'factura.html', {
         'venta': venta,
         'detalles': detalles,
-        'fecha_vencimiento': fecha_vencimiento
+        'fecha_vencimiento': fecha_vencimiento,
+        'total_letras': total_letras,
+        'empresa': empresa,  # 👈 AHORA DISPONIBLE EN EL TEMPLATE
     })
+
 
 
 @login_required
@@ -883,7 +907,8 @@ def eliminar_cai(request, pk):
     return redirect('listar_cai')
 
 
-
+from django.http import JsonResponse
+from .models import Producto
 
 @login_required
 def buscar_producto(request):
@@ -917,13 +942,12 @@ def buscar_producto(request):
         if producto:
             return JsonResponse({
                 'encontrado': True,
-                'id': producto.id,
-                'nombre': producto.nombre,
-                'precio': float(producto.precio),
-                'stock': producto.stock,
-                'codigo': producto.codigo,
-                'codigo_barra': getattr(producto, 'codigo_barra', '')
-            })
+            'id': producto.id,
+            'codigo': producto.codigo,
+            'nombre': producto.nombre,
+            'precio': str(producto.precio),
+            'tipo_impuesto': producto.tipo_impuesto
+       })
         else:
             return JsonResponse({
                 'encontrado': False,
@@ -1037,3 +1061,23 @@ def registrar_pago(request):
 def lista_pagos(request):
     pagos = PagoEmpleado.objects.select_related("empleado").order_by("-fecha_pago")
     return render(request, "empleados/lista_pagos.html", {"pagos": pagos})
+
+
+@login_required
+@permission_required('core.change_cai')
+def configuracion_empresa(request):
+    try:
+        config = EmpresaConfig.objects.get(pk=1)
+    except EmpresaConfig.DoesNotExist:
+        config = EmpresaConfig(pk=1)
+
+    if request.method == 'POST':
+        form = EmpresaConfigForm(request.POST, instance=config)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Configuración guardada correctamente.")
+            return redirect('configuracion_empresa')
+    else:
+        form = EmpresaConfigForm(instance=config)
+
+    return render(request, 'configuracion_empresa.html', {'form': form})

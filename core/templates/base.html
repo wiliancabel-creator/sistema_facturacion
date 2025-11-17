@@ -20,13 +20,21 @@
   <!-- Barra de navegación -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" id="menu-principal">
     <div class="container-fluid">
-      <a class="navbar-brand" href="{% url 'dashboard' %}">🛍️ SISTEMAS FAJARDO</a>
+
+      <!-- Nombre dinámico de la empresa -->
+      <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">
+        🛍️ {{ empresa.nombre|default:"SISTEMAS FAJARDO" }}
+      </a>
+
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
 
       <div class="collapse navbar-collapse" id="navbarNav">
+
+        <!-- IZQUIERDA -->
         <ul class="navbar-nav me-auto">
+
           <li class="nav-item">
             <a class="nav-link" href="{% url 'listar_productos' %}">📦 Productos</a>
           </li>
@@ -45,29 +53,58 @@
 
           <li class="nav-item">
             {% if perms.core.view_empleado %}
-            <a class="nav-link" href="{% url 'lista_empleados' %}">👷 Empleados</a>
+              <a class="nav-link" href="{% url 'lista_empleados' %}">👷 Empleados</a>
             {% endif %}
           </li>
 
+          <!-- ❌ ELIMINADO: CONFIGURACIÓN AQUÍ
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'configuracion_empresa' %}">
+              CONFIGURACION DE EMPRESA
+            </a>
+          </li>
+          -->
         </ul>
 
-        <!-- Botón cambiar tema -->
-        <button id="themeToggle" class="btn btn-outline-light me-3">
-          <i class="bi bi-brightness-high-fill" id="themeIcon"></i>
-        </button>
+        <!-- DERECHA -->
+        <ul class="navbar-nav ms-auto align-items-center">
 
-        <!-- Botón cerrar sesión -->
-        {% if user.is_authenticated %}
-          <form action="{% url 'logout' %}" method="post" class="d-flex">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger btn-sm">🔓 Cerrar sesión</button>
-          </form>
-        {% endif %}
+          <!-- Botón Cambiar Tema -->
+          <li class="nav-item me-2">
+            <button id="themeToggle" class="btn btn-outline-light btn-sm">
+              <i class="bi bi-brightness-high-fill" id="themeIcon"></i>
+            </button>
+          </li>
+
+          <!-- Botón Configuración de Empresa (nuevo) -->
+          {% if perms.core.view_empleado %}
+          <li class="nav-item me-2">
+            <a href="{% url 'configuracion_empresa' %}"
+               class="btn btn-warning btn-sm fw-bold text-dark">
+              🏢 Configuración
+            </a>
+          </li>
+          {% endif %}
+
+          <!-- Botón Cerrar Sesión -->
+          {% if user.is_authenticated %}
+          <li class="nav-item">
+            <form action="{% url 'logout' %}" method="post">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm">
+                🔓 Cerrar sesión
+              </button>
+            </form>
+          </li>
+          {% endif %}
+
+        </ul>
+
       </div>
     </div>
   </nav>
 
-  <!-- Contenido dinámico SIN padding en móvil -->
+  <!-- Contenido dinámico -->
   <div class="container-fluid px-0">
     {% block content %}
     {% endblock %}

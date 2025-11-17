@@ -64,11 +64,16 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     
     # Empleados y Pagos
-     path("empleados/", views.lista_empleados, name="lista_empleados"),
+    path("empleados/", views.lista_empleados, name="lista_empleados"),
     path("empleados/nuevo/", views.crear_empleado, name="crear_empleado"),
     path("empleados/<int:pk>/editar/", views.editar_empleado, name="editar_empleado"),
     path("empleados/pagos/", views.lista_pagos, name="lista_pagos"),
     path("empleados/pagos/nuevo/", views.registrar_pago, name="registrar_pago"),
+    
+    # EMPRESA
+    path('configuracion-empresa/', views.configuracion_empresa, name='configuracion_empresa'),
+
+    
     
 ]
 

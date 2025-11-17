@@ -1,6 +1,7 @@
 from django import forms
 from .models import Producto,DetalleVenta,DetalleCompra,Proveedor,Compra,Cliente, Categoria, Cotizacion, DetalleCotizacion 
 from .models import Venta, Cai, Empleado, PagoEmpleado
+from .models import EmpresaConfig
 
 
 class ProductoForm(forms.ModelForm):
@@ -40,62 +41,62 @@ class DetalleCotizacionForm(forms.ModelForm):
 # En tu forms.py - SOLO CAMBIAR la clase DetalleVentaForm:
 
 class DetalleVentaForm(forms.ModelForm):
-    precio_unitario = forms.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        required=False,
-        widget=forms.NumberInput(attrs={
-            'readonly': True,
-            'class': 'form-control precio-readonly'
-        })
-    )
+        precio_unitario = forms.DecimalField(
+            max_digits=10,
+            decimal_places=2,
+            required=False,
+            widget=forms.NumberInput(attrs={
+                'readonly': True,
+                'class': 'form-control precio-readonly'
+            })
+        )
 
-    descuento = forms.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        required=False,
-        initial=0,
-        widget=forms.HiddenInput()
-    )
+        descuento = forms.DecimalField(
+            max_digits=5,
+            decimal_places=2,
+            required=False,
+            initial=0,
+            widget=forms.HiddenInput()
+        )
 
-    class Meta:
-        model = DetalleVenta
-        fields = ['producto', 'cantidad', 'precio_unitario', 'descuento']
-        widgets = {
-            'producto': forms.HiddenInput(),
-            'cantidad': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'value': '1'}),
-        }
+        class Meta:
+            model = DetalleVenta
+            fields = ['producto', 'cantidad', 'precio_unitario', 'descuento']
+            widgets = {
+                'producto': forms.HiddenInput(),
+                'cantidad': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'value': '1'}),
+            }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['producto'].queryset = Producto.objects.filter(activo=True)
-        self.fields['producto'].empty_label = "Seleccionar producto..."
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.fields['producto'].queryset = Producto.objects.filter(activo=True)
+            self.fields['producto'].empty_label = "Seleccionar producto..."
 
-        if self.instance.pk and self.instance.producto:
-            self.fields['precio_unitario'].initial = self.instance.producto.precio
+            if self.instance.pk and self.instance.producto:
+                self.fields['precio_unitario'].initial = self.instance.producto.precio
 
 
 class ClienteVentaForm(forms.ModelForm):
-    class Meta:
-        model = Venta
-        fields = ['cliente', 'tipo_pago', 'cai']
-        widgets = {
-            'cliente':    forms.Select(attrs={'class': 'form-control'}),
-            'tipo_pago':  forms.Select(attrs={'class': 'form-control'}),
-            'cai':        forms.Select(attrs={'class': 'form-control'}),
-        }
+        class Meta:
+            model = Venta
+            fields = ['cliente', 'tipo_pago', 'cai']
+            widgets = {
+                'cliente':    forms.Select(attrs={'class': 'form-control'}),
+                'tipo_pago':  forms.Select(attrs={'class': 'form-control'}),
+                'cai':        forms.Select(attrs={'class': 'form-control'}),
+            }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['cliente'].queryset = Cliente.objects.all()
-        self.fields['cai'].queryset = Cai.objects.filter(activo=True)
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.fields['cliente'].queryset = Cliente.objects.all()
+            self.fields['cai'].queryset = Cai.objects.filter(activo=True)
 
-        # 👇 Establecer "CONSUMIDOR FINAL" como cliente por defecto
-        try:
-            consumidor_final = Cliente.objects.get(nombre__iexact="CONSUMIDOR FINAL")
-            self.initial['cliente'] = consumidor_final.id
-        except Cliente.DoesNotExist:
-            pass
+            # 👇 Establecer "CONSUMIDOR FINAL" como cliente por defecto
+            try:
+                consumidor_final = Cliente.objects.get(nombre__iexact="CONSUMIDOR FINAL")
+                self.initial['cliente'] = consumidor_final.id
+            except Cliente.DoesNotExist:
+                pass
 
 
 
@@ -143,7 +144,14 @@ class CompraForm(forms.ModelForm):
 class ClienteForm(forms.ModelForm):
     class Meta:
         model = Cliente
-        fields = ['nombre', 'direccion', 'telefono', 'correo'] 
+        fields = ['nombre', 'rtn', 'direccion', 'telefono']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'rtn': forms.TextInput(attrs={'class': 'form-control'}),
+            'direccion': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+ 
                         
 
 
@@ -151,17 +159,20 @@ class CaiForm(forms.ModelForm):
     class Meta:
         model = Cai
         fields = [
-            'codigo', 'rango_inicial', 'rango_final',
-            'correlativo_actual', 'fecha_limite', 'activo'
+            'codigo', 'prefijo', 'rango_inicial',
+            'rango_final', 'correlativo_actual',
+            'fecha_limite', 'activo'
         ]
         widgets = {
-            'codigo':            forms.TextInput(attrs={'class': 'form-control'}),
-            'rango_inicial':     forms.NumberInput(attrs={'class': 'form-control'}),
-            'rango_final':       forms.NumberInput(attrs={'class': 'form-control'}),
-            'correlativo_actual':forms.NumberInput(attrs={'class': 'form-control'}),
-            'fecha_limite':      forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'activo':            forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'codigo': forms.TextInput(attrs={'class': 'form-control'}),
+            'prefijo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '000-001-01-'}),
+            'rango_inicial': forms.NumberInput(attrs={'class': 'form-control'}),
+            'rango_final': forms.NumberInput(attrs={'class': 'form-control'}),
+            'correlativo_actual': forms.NumberInput(attrs={'class': 'form-control'}),
+            'fecha_limite': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
 
 
 class CategoriaForm(forms.ModelForm):
@@ -196,5 +207,18 @@ class PagoEmpleadoForm(forms.ModelForm):
             'fecha_pago': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'monto': forms.NumberInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+
+
+class EmpresaConfigForm(forms.ModelForm):
+    class Meta:
+        model = EmpresaConfig
+        fields = ['nombre', 'rtn', 'direccion', 'telefono', 'correo']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'rtn': forms.TextInput(attrs={'class': 'form-control'}),
+            'direccion': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control'}),
+            'correo': forms.TextInput(attrs={'class': 'form-control'}),
         }
         

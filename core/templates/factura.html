@@ -1,147 +1,167 @@
 {% extends 'base.html' %}
-{% block title %}
-Factura N°. {{ venta.numero_factura|stringformat:"05d" }}
-{% endblock %}
-
+{% block title %}Factura Térmica{% endblock %}
 {% block content %}
+
 <style>
-  .recibo {
+#ticket {
   max-width: 320px;
   margin: auto;
   font-family: monospace;
-  font-size: 13px;
-  background: var(--bs-body-bg, #fff);
-  color: var(--bs-body-color, #212529);
-  padding: 10px;
-  border: 1px dashed var(--bs-border-color, #ccc);
+  background: #fff;
+  color: #000;
+  padding: 8px;
+  border: 1px solid #ccc;
 }
 
-.recibo h3,
-.recibo h4,
-.recibo p {
-  text-align: center;
-  margin: 5px 0;
-  color: var(--bs-body-color, #212529);
+/* Modo oscuro */
+body.dark-mode #ticket {
+  background: #1a1a1a;
+  color: #f0f0f0;
+  border-color: #555;
 }
 
-.recibo .datos-factura {
-  margin: 10px 0;
-  font-size: 14px;
-}
+.center { text-align: center; }
+.right  { text-align: right; }
+hr { border: 0; border-bottom: 1px dashed #999; margin: 6px 0; }
 
-.recibo table {
+/* TABLA DETALLE */
+.detalle-tabla {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
+  font-size: 12px;
+  margin-top: 3px;
 }
 
-.recibo th,
-.recibo td {
-  border-bottom: 1px dashed var(--bs-border-color, #ccc);
-  padding: 4px;
-  text-align: left;
-  color: var(--bs-body-color, #212529);
+.detalle-tabla th {
+  border-bottom: 1px dashed #999;
+  padding-bottom: 2px;
 }
 
-.recibo .total {
-  text-align: right;
-  font-weight: bold;
-  margin-top: 10px;
+.detalle-tabla td {
+  padding: 2px 0;
 }
 
-.recibo .firma {
-  margin-top: 30px;
-  text-align: center;
-}
-
-.linea-separadora {
-  border-color: var(--bs-border-color, #ccc);
-}
-
+/* Ocultar al imprimir */
 @media print {
-  .btn-imprimir {
-    display: none;
-  }
-  
-  /* Forzar fondo blanco al imprimir */
-  .recibo {
-    background: white !important;
-    color: black !important;
-  }
-  
-  .recibo h3, .recibo h4, .recibo p,
-  .recibo th, .recibo td {
-    color: black !important;
-  }
+  #btn-print { display: none; }
 }
 </style>
 
-<div class="recibo">
-  <h3>SISTEMAS FAJARDO</h3>
-  <p>📍 Calle Principal #123<br>☎️ 9999-9999<br>📧 tienda@ejemplo.com</p>
-  
-<hr class="linea-separadora">
+<div id="ticket">
 
-  <div class="datos-factura">
-    <h4>Factura N°. {{ venta.numero_factura|stringformat:"05d" }}</h4>
-    <p>
-      CAI: {{ venta.cai.codigo }}<br>
-      Válido hasta: {{ venta.cai.fecha_limite|date:"d/m/Y" }}
-    </p>
-
-    <hr class="linea-separadora">
-
-    <p>Fecha: {{ venta.fecha|date:"d/m/Y H:i" }}</p>
-    <p>💳 Tipo de pago: {{ venta.tipo_pago|title }}</p>
-    {% if venta.tipo_pago|lower == "credito" and fecha_vencimiento %}
-    <p>📅 Vence: {{ fecha_vencimiento|date:"d/m/Y" }}</p>
-     {% endif %}
-
+  <!-- ENCABEZADO DEL NEGOCIO -->
+  <div class="center">
+    <strong>{{ empresa.nombre }}</strong><br>
+    RTN: {{ empresa.rtn }}<br>
+    {{ empresa.direccion }}<br>
+    Tel: {{ empresa.telefono }}<br>
+    {{ empresa.correo }}
   </div>
 
-  {% if venta.cliente %}
-    <p>🧍 Cliente: {{ venta.cliente.nombre }}</p>
-    {% if venta.cliente.telefono %}<p>📞 {{ venta.cliente.telefono }}</p>{% endif %}
-    {% if venta.cliente.correo %}<p>📧 {{ venta.cliente.correo }}</p>{% endif %}
-    <hr>
+  <hr>
+
+  <!-- NUMERO DE FACTURA -->
+  <strong>Factura N°:</strong>
+  {{ venta.numero_factura }}<br>
+
+  <!-- CAI Y RANGOS -->
+  <strong>CAI:</strong>
+  {% if venta.cai %}{{ venta.cai.codigo }}{% else %}SIN CAI{% endif %}<br>
+
+  {% if venta.cai %}
+      <strong>Rango:</strong>
+      {{ venta.cai.prefijo }}{{ venta.cai.rango_inicial|stringformat:"08d" }}
+      a
+      {{ venta.cai.prefijo }}{{ venta.cai.rango_final|stringformat:"08d" }}<br>
+
+      <strong>Válido hasta:</strong> {{ venta.cai.fecha_limite|date:"d/m/Y" }}<br>
   {% endif %}
 
- <table>
-  <thead>
-    <tr>
-      <th>Producto</th>
-      <th>Cant</th>
-      <th>Precio</th>
-      <th>Desc.</th>
-      <th>Subt</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for item in detalles %}
-      <tr>
-        <td>{{ item.producto.nombre }}</td>
-        <td>{{ item.cantidad }}</td>
-        <td>L {{ item.precio_unitario }}</td>   <!-- precio original -->
-        <td>{{ item.descuento }}%</td>          <!-- % descuento -->
-        <td>L {{ item.subtotal }}</td>          <!-- subtotal con descuento -->
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
+  <strong>Fecha:</strong> {{ venta.fecha|date:"d/m/Y H:i" }}<br>
+  <strong>Pago:</strong> {{ venta.tipo_pago|title }}<br>
 
-  <p class="total">💰 Total: L {{ venta.total }}</p>
+  <hr>
 
-  <div class="firma">
-    <p>__________________________</p>
-    <p>Firma del cliente</p>
+  <!-- DATOS DEL CLIENTE -->
+  <strong>Cliente:</strong> {{ venta.cliente.nombre }}<br>
+  {% if venta.cliente.rtn %}<strong>RTN:</strong> {{ venta.cliente.rtn }}<br>{% endif %}
+  {% if venta.cliente.direccion %}<strong>Dirección:</strong> {{ venta.cliente.direccion }}<br>{% endif %}
+  {% if venta.cliente.telefono %}<strong>Tel:</strong> {{ venta.cliente.telefono }}<br>{% endif %}
+
+  <hr>
+
+  <strong>Detalle:</strong><br>
+
+  {% for item in detalles %}
+
+    <div style="font-weight:bold; margin-top:6px;">
+      {{ item.producto.nombre }}
+    </div>
+
+    <table class="detalle-tabla">
+      <thead>
+        <tr>
+          <th>Cant</th>
+          <th>Precio</th>
+          <th>Desc</th>
+          <th>ISV</th>
+          <th class="right">Subt</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td>{{ item.cantidad }}</td>
+          <td>{{ item.precio_unitario }}</td>
+          <td>{{ item.descuento }}%</td>
+          <td>
+            {% if item.producto.tipo_impuesto == 'G15' %}15%
+            {% elif item.producto.tipo_impuesto == 'G18' %}18%
+            {% else %}0%
+            {% endif %}
+          </td>
+          <td class="right">L {{ item.total_linea }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+  {% endfor %}
+
+  <!-- TOTALES FISCALES -->
+  <strong>Totales:</strong><br>
+  Exento: L {{ venta.subtotal_exento }}<br>
+  Gravado 15%: L {{ venta.subtotal_g15 }}<br>
+  Gravado 18%: L {{ venta.subtotal_g18 }}<br>
+  ISV 15%: L {{ venta.impuesto_15 }}<br>
+  ISV 18%: L {{ venta.impuesto_18 }}<br>
+  <hr>
+
+  <strong>Total a pagar: L {{ venta.total }}</strong>
+
+  <hr>
+
+  <strong>Son:</strong><br>
+  {{ total_letras }}
+
+  <br><br>
+  <div class="center">
+    ------------------------------<br>
+    Firma del cliente
   </div>
 
-  <div class="text-center mt-3">
-    <button onclick="window.print()" class="btn btn-sm btn-primary btn-imprimir">
-      🖨️ Imprimir
-    </button>
-  </div>
 </div>
+
+<div class="text-center mt-3">
+  <button id="btn-print" class="btn btn-primary" onclick="window.print()">
+    🖨️ Imprimir
+  </button>
+</div>
+
 {% endblock %}
+
+
+
+
 
 
