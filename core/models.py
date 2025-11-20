@@ -136,6 +136,8 @@ class Venta(models.Model):
         default='contado'
     )
     
+    
+    
     cai = models.ForeignKey(
         'Cai',
         on_delete=models.SET_NULL,
@@ -316,6 +318,23 @@ class EmpresaConfig(models.Model):
         return "Configuración del negocio"
 
 
+
+class Pago(models.Model):
+    METODOS = [
+        ('efectivo', 'Efectivo'),
+        ('tarjeta', 'Tarjeta'),
+        ('transferencia', 'Transferencia'),
+    ]
+
+    venta = models.ForeignKey('Venta', on_delete=models.CASCADE, related_name='pagos')
+    metodo = models.CharField(max_length=20, choices=METODOS)
+    monto = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    fecha = models.DateTimeField(auto_now_add=True)
+    referencia = models.CharField(max_length=100, blank=True, null=True,
+                                  help_text="Número de referencia o autorización (tarjeta/transferencia)")
+
+    def __str__(self):
+        return f"{self.get_metodo_display()} L {self.monto} — Venta {self.venta_id}"
    
  
 

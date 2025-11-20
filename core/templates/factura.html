@@ -78,6 +78,13 @@ hr { border: 0; border-bottom: 1px dashed #999; margin: 6px 0; }
 
   <strong>Fecha:</strong> {{ venta.fecha|date:"d/m/Y H:i" }}<br>
   <strong>Pago:</strong> {{ venta.tipo_pago|title }}<br>
+  <h5>Pagos:</h5>
+<ul>
+  {% for pago in venta.pagos.all %}
+    <li>{{ pago.get_metodo_display }} — L {{ pago.monto }} {% if pago.referencia %} (Ref: {{ pago.referencia }}){% endif %}</li>
+  {% endfor %}
+</ul>
+
 
   <hr>
 
