@@ -270,6 +270,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   addByCodeBtn.onclick = () => buscarYAgregar(codigoInput.value.trim());
   codigoInput.onkeypress = e => { if (e.key === "Enter") { e.preventDefault(); buscarYAgregar(codigoInput.value.trim()); } };
+  
+  // ✅ BOTONES DE ACCESO RÁPIDO
+  document.querySelectorAll('.quick-product').forEach(btn => {
+    btn.addEventListener('click', () => buscarYAgregar(btn.dataset.codigo));
+  });
 
   /* ===================================================================
      PAGOS MIXTOS - FORMSET FUNCIONANDO 100%
@@ -317,7 +322,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.cambiarMetodo = (i, v) => { pagos[i].metodo = v; validarPagos(); };
-  window.cambiarMonto = (i, v) => { pagos[i].monto = safeNum(v); validarPagos(); };
+  window.cambiarMonto = (i, v) => { 
+    pagos[i].monto = safeNum(v); 
+    // ✅ Si cambio un pago que NO es el primero, ajustar el primero automáticamente
+    if (i !== 0) {
+      syncPrimerPagoConTotal();
+    } else {
+      validarPagos();
+    }
+  };
 
   window.eliminarPago = i => {
     if (pagos.length > 1) pagos.splice(i, 1);

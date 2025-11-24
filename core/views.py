@@ -315,15 +315,12 @@ from .models import Pago
 @permission_required('core.add_venta', raise_exception=True)
 def crear_venta(request):
     DetalleVentaFormSet = formset_factory(DetalleVentaForm, extra=0, can_delete=True, min_num=1, validate_min=True)
-    PagoFormSet = formset_factory(PagoForm, extra=0, min_num=1, validate_min=True)
+    PagoFormSet = formset_factory(PagoForm, extra=1, min_num=1, validate_min=True)
 
     if request.method == 'POST':
         cliente_form = ClienteVentaForm(request.POST)
         formset = DetalleVentaFormSet(request.POST)
         pago_formset = PagoFormSet(request.POST, prefix='pagos')
-        
-        print("\n\n🎯 REQUEST POST:", request.POST, "\n\n")
-
 
         # Filtrar formularios válidos
         forms_validos = [
@@ -341,7 +338,7 @@ def crear_venta(request):
                 with transaction.atomic():
                     venta = cliente_form.save(commit=False)
 
-                    # CAI y número (tu lógica)
+                    # CAI y número
                     cai_activo = Cai.objects.filter(activo=True).order_by('-id').first()
                     if cai_activo:
                         correlativo = cai_activo.asignar_siguiente_correlativo()
@@ -360,21 +357,28 @@ def crear_venta(request):
                     venta.total = Decimal('0.00')
                     venta.save()
 
-                    # Guardar detalles y calcular totales (igual a tu lógica actual)
+                    # Calcular totales
                     subtotal_exento = Decimal('0.00')
                     subtotal_g15 = Decimal('0.00')
                     subtotal_g18 = Decimal('0.00')
                     impuesto_15 = Decimal('0.00')
                     impuesto_18 = Decimal('0.00')
 
+                    # ✅ PRIMERO: Validar stock ANTES de crear detalles
+                    for form in forms_validos:
+                        producto = form.cleaned_data['producto']
+                        cantidad = form.cleaned_data['cantidad']
+                        
+                        if producto.stock < cantidad:
+                            # ✅ Lanzar excepción DENTRO del atomic
+                            raise ValueError(f'❌ Stock insuficiente para {producto.nombre}. Disponible: {producto.stock}, Solicitado: {cantidad}')
+
+                    # Guardar detalles
                     for form in forms_validos:
                         producto = form.cleaned_data['producto']
                         cantidad = form.cleaned_data['cantidad']
                         precio_unitario = form.cleaned_data.get('precio_unitario') or producto.precio
                         descuento = form.cleaned_data.get('descuento', 0)
-
-                        if producto.stock < cantidad:
-                            raise ValueError(f'Stock insuficiente para {producto.nombre}.')
 
                         detalle = DetalleVenta.objects.create(
                             venta=venta,
@@ -394,6 +398,7 @@ def crear_venta(request):
                         else:
                             subtotal_exento += detalle.subtotal
 
+                        # Reducir stock
                         producto.stock -= cantidad
                         producto.save()
 
@@ -405,12 +410,12 @@ def crear_venta(request):
                     venta.total = (subtotal_exento + subtotal_g15 + subtotal_g18 + impuesto_15 + impuesto_18).quantize(Decimal('0.01'))
                     venta.save()
 
-                    # --- VALIDAR PAGOS: la suma de los pagos debe ser igual al total ---
+                    # Validar pagos
                     suma_pagos = sum([p.cleaned_data['monto'] for p in pagos_validos])
                     if suma_pagos != venta.total:
-                        raise ValueError(f'La suma de pagos ({suma_pagos}) no coincide con el total de la venta ({venta.total}).')
+                        raise ValueError(f'❌ La suma de pagos (L{suma_pagos}) no coincide con el total (L{venta.total}).')
 
-                    # Guardar objetos Pago
+                    # Guardar pagos
                     for p in pagos_validos:
                         Pago.objects.create(
                             venta=venta,
@@ -419,7 +424,7 @@ def crear_venta(request):
                             referencia=p.cleaned_data.get('referencia') or ''
                         )
 
-                    # Si es crédito, crear CuentaPorCobrar (tu lógica)
+                    # Crear cuenta por cobrar si es crédito
                     if venta.tipo_pago.lower() == "credito":
                         CuentaPorCobrar.objects.create(
                             cliente=venta.cliente,
@@ -429,23 +434,23 @@ def crear_venta(request):
                             estado='pendiente'
                         )
 
-                    messages.success(request, f'Venta registrada. Factura: {venta.numero_factura} — Total L{venta.total}')
+                    messages.success(request, f'✅ Venta registrada. Factura: {venta.numero_factura} — Total L{venta.total}')
                     return redirect('resumen_ventas')
 
+            except ValueError as e:
+                # ✅ Capturar el error y mostrar mensaje amigable
+                messages.error(request, str(e))
             except Exception as e:
-                transaction.set_rollback(True)
+                # ✅ Cualquier otro error
                 messages.error(request, f'❌ Error al procesar la venta: {e}')
 
         else:
             if not cliente_form.is_valid():
-                messages.error(request, 'Error en los datos del cliente.')
+                messages.error(request, '❌ Error en los datos del cliente.')
             if not forms_validos:
-                messages.error(request, 'Debe agregar al menos un producto válido.')
+                messages.error(request, '❌ Debe agregar al menos un producto válido.')
             if not pagos_validos:
-                messages.error(request, 'Debe agregar al menos un pago válido.')
-
-            formset = DetalleVentaFormSet()
-            pago_formset = PagoFormSet(prefix='pagos')
+                messages.error(request, '❌ Debe agregar al menos un pago válido.')
 
     else:
         cliente_form = ClienteVentaForm()
