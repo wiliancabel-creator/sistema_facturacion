@@ -258,6 +258,13 @@ class CuentaPorCobrar(models.Model):
     )
     fecha_pago        = models.DateField(null=True, blank=True)
     monto_pagado      = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+       # ✅ AGREGAR ESTA PROPIEDAD
+    @property
+    def saldo_restante(self):
+        """Calcula cuánto falta por pagar"""
+        return self.monto_pendiente - self.monto_pagado
+    
 
     def __str__(self):
         return f"CxC {self.venta.numero_factura} – {self.estado}"
@@ -275,6 +282,12 @@ class CuentaPorPagar(models.Model):
     )
     fecha_pago        = models.DateField(null=True, blank=True)
     monto_pagado      = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+     # ✅ AGREGAR ESTA PROPIEDAD
+    @property
+    def saldo_restante(self):
+        """Calcula cuánto falta por pagar"""
+        return self.monto_pendiente - self.monto_pagado
 
     def __str__(self):
         return f"CxP {self.compra.id} – {self.estado}"

@@ -23,7 +23,9 @@
   <thead>
     <tr>
       <th>Cliente</th>
-      <th>Monto</th>
+      <th>Monto Original</th>
+      <th>Monto Pagado</th>
+      <th>Saldo Restante</th>
       <th>Vence</th>
       <th>Estado</th>
       <th>Acciones</th>
@@ -33,7 +35,11 @@
     {% for cuenta in por_cobrar %}
     <tr>
       <td>{{ cuenta.cliente.nombre }}</td>
-      <td>L {{ cuenta.monto_pendiente }}</td>
+      <td>L {{ cuenta.monto_pendiente|floatformat:2 }}</td>
+      <td>L {{ cuenta.monto_pagado|floatformat:2 }}</td>
+      <td>
+        <strong>L {{ cuenta.saldo_restante|floatformat:2 }}</strong>
+      </td>
       <td>{{ cuenta.fecha_vencimiento|date:"M d, Y" }}</td>
       <td>
         {% if cuenta.estado == 'pendiente' %}
@@ -51,7 +57,7 @@
     </tr>
     {% empty %}
     <tr>
-      <td colspan="5">No hay cuentas por cobrar.</td>
+      <td colspan="7">No hay cuentas por cobrar.</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -62,7 +68,9 @@
   <thead>
     <tr>
       <th>Proveedor</th>
-      <th>Monto</th>
+      <th>Monto Original</th>
+      <th>Monto Pagado</th>
+      <th>Saldo Restante</th>
       <th>Vence</th>
       <th>Estado</th>
       <th>Acciones</th>
@@ -72,7 +80,11 @@
     {% for cuenta in por_pagar %}
     <tr>
       <td>{{ cuenta.proveedor.nombre }}</td>
-      <td>L {{ cuenta.monto_pendiente }}</td>
+      <td>L {{ cuenta.monto_pendiente|floatformat:2 }}</td>
+      <td>L {{ cuenta.monto_pagado|floatformat:2 }}</td>
+      <td>
+        <strong>L {{ cuenta.saldo_restante|floatformat:2 }}</strong>
+      </td>
       <td>{{ cuenta.fecha_vencimiento|date:"M d, Y" }}</td>
       <td>
         {% if cuenta.estado == 'pendiente' %}
@@ -90,7 +102,7 @@
     </tr>
     {% empty %}
     <tr>
-      <td colspan="5">No hay cuentas por pagar.</td>
+      <td colspan="7">No hay cuentas por pagar.</td>
     </tr>
     {% endfor %}
   </tbody>

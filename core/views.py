@@ -519,7 +519,7 @@ def factura(request, venta_id):
     # Fecha de vencimiento para crédito
     fecha_vencimiento = None
     if venta.tipo_pago.lower() == "credito":
-        cuenta = venta.cuentaporcobrar_set.first()
+        cuenta = venta.cuentaporcobrar.first()
         if cuenta:
             fecha_vencimiento = cuenta.fecha_vencimiento
 
