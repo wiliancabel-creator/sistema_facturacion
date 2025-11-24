@@ -19,10 +19,13 @@
       <!-- Columna izquierda: Código y cliente -->
       <div class="col-md-4">
         <label class="form-label">🔎 Código o barra:</label>
-        <div class="input-group mb-2">
-            <input type="text" id="codigo_input" class="form-control" placeholder="Ej: 12345 o ABC001" autofocus>
-         <button type="button" class="btn btn-primary btn-sm" id="add-by-code-btn" style="height: 45px; margin-left: 5px;">Agregar</button>
-        </div>
+        <div class="autocomplete-container">
+    <div class="input-group mb-2">
+        <input type="text" id="codigo_input" class="form-control" placeholder="Buscar por código, nombre o código de barra..." autofocus>
+        <button type="button" class="btn btn-primary btn-sm" id="add-by-code-btn" style="height: 45px; margin-left: 5px;">Agregar</button>
+    </div>
+    <div class="autocomplete-suggestions" id="suggestions-box"></div>
+</div>
         <div id="error-msg" class="text-danger small"></div>
 
         <h5 class="mt-4">🧍 Cliente</h5>
@@ -65,7 +68,9 @@
           <thead class="table-light">
             <tr>
               <th>Código</th>
+              <th>Codgio barra</th>
               <th>Producto</th>
+
               <th style="width: 100px;">Cant.</th>
               <th style="width: 120px;">Precio</th>
               <th style="width: 100px;">Desc. %</th>
@@ -96,6 +101,59 @@
     </div>
   </div>
 </div>
+
+<style>
+.autocomplete-container {
+    position: relative;
+}
+
+.autocomplete-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bs-body-bg, #2d3748);  /* 🌙 Se adapta al tema */
+    color: var(--bs-body-color, #fff);
+    border: 1px solid var(--bs-border-color, #4a5568);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    display: none;
+}
+
+.autocomplete-suggestions.show {
+    display: block;
+}
+
+.autocomplete-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--bs-border-color, #4a5568);
+    transition: background-color 0.2s;
+}
+
+.autocomplete-item:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item strong {
+    color: inherit;
+}
+
+.autocomplete-item small {
+    display: block;
+    opacity: 0.8;
+    margin-top: 4px;
+}
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -185,9 +243,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const subtotalLinea = base + impuesto;
 
+      // ✅ CORRECCIÓN: usar p.codigo_barra en lugar de p.barra.codigo
       tbody.insertAdjacentHTML("beforeend", `
         <tr>
           <td>${p.codigo}</td>
+          <td>${p.codigo_barra || 'N/A'}</td>
           <td>${p.nombre}</td>
 
           <td>
@@ -254,6 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else productos.push({
           id: data.id,
           codigo: data.codigo,
+          codigo_barra: data.codigo_barra || '',  // ✅ puede ser null/undefined
           nombre: data.nombre,
           cantidad: 1,
           precio_unitario: parseFloat(data.precio),
@@ -266,10 +327,103 @@ document.addEventListener('DOMContentLoaded', () => {
         codigoInput.value = "";
         codigoInput.focus();
       })
+      .catch(err => {
+        console.error('Error:', err);
+        errorMsg.textContent = "Error al buscar producto";
+      });
   }
 
   addByCodeBtn.onclick = () => buscarYAgregar(codigoInput.value.trim());
-  codigoInput.onkeypress = e => { if (e.key === "Enter") { e.preventDefault(); buscarYAgregar(codigoInput.value.trim()); } };
+  codigoInput.onkeypress = e => { 
+    if (e.key === "Enter") { 
+      e.preventDefault(); 
+      buscarYAgregar(codigoInput.value.trim()); 
+    } 
+  };
+
+
+  // ✅ AUTOCOMPLETADO DE PRODUCTOS
+const suggestionsBox = document.getElementById('suggestions-box');
+let timeoutId = null;
+
+codigoInput.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    
+    // Limpiar timeout anterior
+    clearTimeout(timeoutId);
+    
+    // Si está vacío, ocultar sugerencias
+    if (query.length < 2) {
+        suggestionsBox.classList.remove('show');
+        return;
+    }
+    
+    // Esperar 300ms después de que deje de escribir
+    timeoutId = setTimeout(() => {
+        fetch(`/sugerencias-productos/?q=${encodeURIComponent(query)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.productos && data.productos.length > 0) {
+                    mostrarSugerencias(data.productos);
+                } else {
+                    suggestionsBox.classList.remove('show');
+                }
+            })
+            .catch(err => {
+                console.error('Error al buscar sugerencias:', err);
+                suggestionsBox.classList.remove('show');
+            });
+    }, 300);
+});
+
+function mostrarSugerencias(productos) {
+    suggestionsBox.innerHTML = '';
+    
+    productos.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'autocomplete-item';
+        item.innerHTML = `
+            <strong>${p.codigo}</strong> - ${p.nombre}
+            <small>Código de barra: ${p.codigo_barra || 'N/A'} | Precio: L ${p.precio} | Stock: ${p.stock}</small>
+        `;
+        
+      item.addEventListener('click', () => {
+    // Al hacer clic, agregar el producto
+            const existeEnTabla = productos.find(prod => prod.id === p.id);
+            if (existeEnTabla) {
+                existeEnTabla.cantidad++;
+            } else {
+                productos.push({
+                    id: p.id,
+                    codigo: p.codigo,
+                    codigo_barra: p.codigo_barra || '',
+                    nombre: p.nombre,
+                    cantidad: 1,
+                    precio_unitario: parseFloat(p.precio),
+                    descuento: 0,
+                    tipo_impuesto: p.tipo_impuesto || 'E'
+                });
+            }
+
+            renderTabla();
+            codigoInput.value = '';
+            suggestionsBox.classList.remove('show');
+            codigoInput.focus();  
+});        
+        
+        suggestionsBox.appendChild(item);
+    });
+    
+    suggestionsBox.classList.add('show');
+}
+
+// Cerrar sugerencias al hacer clic fuera
+document.addEventListener('click', (e) => {
+    if (!codigoInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+        suggestionsBox.classList.remove('show');
+    }
+});
+
   
   // ✅ BOTONES DE ACCESO RÁPIDO
   document.querySelectorAll('.quick-product').forEach(btn => {

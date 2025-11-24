@@ -963,6 +963,7 @@ def buscar_producto(request):
                 'encontrado': True,
             'id': producto.id,
             'codigo': producto.codigo,
+            'codigo_barra': producto.codigo_barra or '', 
             'nombre': producto.nombre,
             'precio': str(producto.precio),
             'tipo_impuesto': producto.tipo_impuesto
@@ -1100,3 +1101,40 @@ def configuracion_empresa(request):
         form = EmpresaConfigForm(instance=config)
 
     return render(request, 'configuracion_empresa.html', {'form': form})
+
+from .models import models
+@login_required
+def sugerencias_productos(request):
+    """
+    Devuelve sugerencias de productos mientras el usuario escribe.
+    """
+    query = request.GET.get('q', '').strip()
+    
+    if len(query) < 2:  # Solo buscar si escribe al menos 2 caracteres
+        return JsonResponse({'productos': []})
+    
+    try:
+        # Buscar en código, código de barra y nombre
+        productos = Producto.objects.filter(
+            activo=True
+        ).filter(
+            models.Q(codigo__icontains=query) |
+            models.Q(codigo_barra__icontains=query) |
+            models.Q(nombre__icontains=query)
+        )[:10]  # Máximo 10 sugerencias
+        
+        resultados = [{
+            'id': p.id,
+            'codigo': p.codigo,
+            'codigo_barra': p.codigo_barra or '',
+            'nombre': p.nombre,
+            'precio': str(p.precio),
+            'stock': p.stock,
+            'tipo_impuesto': p.tipo_impuesto,
+            'display': f"{p.codigo} - {p.nombre} (Stock: {p.stock})"  # Texto para mostrar
+        } for p in productos]
+        
+        return JsonResponse({'productos': resultados})
+        
+    except Exception as e:
+        return JsonResponse({'productos': [], 'error': str(e)})

@@ -16,7 +16,7 @@ urlpatterns = [
     path('productos/editar/<int:pk>/', views.editar_producto, name='editar_producto'),
     path('productos/eliminar/<int:pk>/', views.eliminar_producto, name='eliminar_producto'),
     path('productos/categorias/nueva/', views.crear_categoria, name='crear_categoria'),
-
+    path('sugerencias-productos/', views.sugerencias_productos, name='sugerencias_productos'),
 
     # Ventas (CORREGIR ESTAS RUTAS)
     path('ventas/crear/', views.crear_venta, name='crear_venta'),
