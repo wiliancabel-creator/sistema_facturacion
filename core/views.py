@@ -548,76 +548,112 @@ def crear_compra(request):
     if request.method == 'POST':
         compra_form = CompraForm(request.POST)
 
-        # Acepta ambas convenciones: con [] y sin []
+        # Obtener arrays de productos
         productos_ids = request.POST.getlist('producto_id[]') or request.POST.getlist('producto_id')
         cantidades = request.POST.getlist('cantidad[]') or request.POST.getlist('cantidad')
         precios = request.POST.getlist('precio_unitario[]') or request.POST.getlist('precio_unitario')
+        descuentos = request.POST.getlist('descuento[]') or request.POST.getlist('descuento')
 
-        # Normalizar y filtrar vacíos/invalidos
+        # Validar y normalizar
         productos_validos = []
-        for pid, cant, precio in zip(productos_ids, cantidades, precios):
+        for i, (pid, cant, precio, desc) in enumerate(zip(productos_ids, cantidades, precios, descuentos)):
             pid = (pid or '').strip()
             cant = (cant or '').strip()
             precio = (precio or '').strip()
+            desc = (desc or '0').strip()
+            
             if not pid or not cant or not precio:
                 continue
             try:
                 cantidad = int(cant)
                 if cantidad <= 0:
                     continue
-                # Soportar coma decimal
                 precio_unitario = Decimal(precio.replace(',', '.'))
+                descuento = Decimal(desc.replace(',', '.'))
             except (ValueError, InvalidOperation):
                 continue
-            productos_validos.append((pid, cantidad, precio_unitario))
+            
+            productos_validos.append((pid, cantidad, precio_unitario, descuento))
 
         if compra_form.is_valid() and productos_validos:
             try:
                 with transaction.atomic():
                     compra = compra_form.save(commit=False)
-                    # Asegurar tipo_pago
-                    compra.tipo_pago = compra_form.cleaned_data.get('tipo_pago')
+                    compra.usuario = request.user  # ✅ Registrar quién hizo la compra
+                    
+                    # Inicializar totales
+                    compra.subtotal_exento = Decimal('0.00')
+                    compra.subtotal_g15 = Decimal('0.00')
+                    compra.subtotal_g18 = Decimal('0.00')
+                    compra.impuesto_15 = Decimal('0.00')
+                    compra.impuesto_18 = Decimal('0.00')
                     compra.total = Decimal('0.00')
                     compra.save()
 
-                    total = Decimal('0.00')
+                    subtotal_exento = Decimal('0.00')
+                    subtotal_g15 = Decimal('0.00')
+                    subtotal_g18 = Decimal('0.00')
+                    impuesto_15 = Decimal('0.00')
+                    impuesto_18 = Decimal('0.00')
 
-                    for pid, cantidad, precio_unitario in productos_validos:
+                    # Procesar cada producto
+                    for pid, cantidad, precio_unitario, descuento in productos_validos:
                         producto = Producto.objects.get(id=pid)
-                        subtotal = precio_unitario * cantidad
+                        
+                        # Calcular subtotal con descuento
+                        base = precio_unitario * cantidad
+                        descuento_monto = base * (descuento / Decimal('100'))
+                        subtotal_linea = base - descuento_monto
 
-                        DetalleCompra.objects.create(
+                        # Crear detalle
+                        detalle = DetalleCompra.objects.create(
                             compra=compra,
                             producto=producto,
                             cantidad=cantidad,
                             precio_unitario=precio_unitario,
-                            subtotal=subtotal
+                            descuento=descuento,
+                            subtotal=subtotal_linea
                         )
+
+                        # Clasificar por tipo de impuesto
+                        tipo = producto.tipo_impuesto
+                        if tipo == 'G15':
+                            subtotal_g15 += subtotal_linea
+                            impuesto_15 += (subtotal_linea * Decimal('0.15'))
+                        elif tipo == 'G18':
+                            subtotal_g18 += subtotal_linea
+                            impuesto_18 += (subtotal_linea * Decimal('0.18'))
+                        else:
+                            subtotal_exento += subtotal_linea
 
                         # Actualizar stock
                         producto.stock += cantidad
                         producto.save()
 
-                        total += subtotal
-
-                    compra.total = total
+                    # Guardar totales en la compra
+                    compra.subtotal_exento = subtotal_exento
+                    compra.subtotal_g15 = subtotal_g15
+                    compra.subtotal_g18 = subtotal_g18
+                    compra.impuesto_15 = impuesto_15
+                    compra.impuesto_18 = impuesto_18
+                    compra.total = (subtotal_exento + subtotal_g15 + subtotal_g18 + 
+                                   impuesto_15 + impuesto_18).quantize(Decimal('0.01'))
                     compra.save()
 
+                    # Crear cuenta por pagar si es crédito
                     if compra.tipo_pago == 'credito':
                         CuentaPorPagar.objects.create(
                             proveedor=compra.proveedor,
                             compra=compra,
                             monto_pendiente=compra.total,
-                            fecha_vencimiento=compra.fecha + timedelta(days=30),
+                            fecha_vencimiento=compra.fecha.date() + timedelta(days=30),
                             estado='pendiente'
                         )
 
-                    # Contar productos distintos en la compra
-                    cantidad_productos = len(productos_validos)
                     messages.success(
                         request,
-                        f"✅ Compra a {compra.proveedor} registrada exitosamente – "
-                        f"Total: L{compra.total:.2f} – {cantidad_productos} producto(s)"
+                        f"✅ Compra #{compra.numero_compra} registrada exitosamente – "
+                        f"Total: L{compra.total:.2f} – {len(productos_validos)} producto(s)"
                     )
                     return redirect('resumen_compra', compra_id=compra.id)
 
@@ -633,12 +669,11 @@ def crear_compra(request):
     else:
         compra_form = CompraForm()
 
-    productos = Producto.objects.all()
+    productos = Producto.objects.filter(activo=True).order_by('nombre')
     return render(request, 'crear_compra.html', {
         'compra_form': compra_form,
         'productos': productos
     })
-
 
 
 
@@ -1018,6 +1053,61 @@ def buscar_clientes(request):
     ]
     return JsonResponse({"results": results})
     
+
+
+@login_required
+def buscar_proveedor(request):
+    """
+    Busca proveedor por ID, RTN, nombre parcial, teléfono o correo.
+    Devuelve JSON para autocompletar formularios.
+    """
+    q = request.GET.get('q', '').strip()
+
+    if not q:
+        return JsonResponse({'encontrado': False, 'error': 'Campo vacío'})
+
+    proveedor = None
+
+    try:
+        # 1. Buscar por ID numérico
+        if q.isdigit():
+            proveedor = Proveedor.objects.filter(id=int(q), activo=True).first()
+
+        # 2. Buscar por RTN exacto
+        if not proveedor:
+            proveedor = Proveedor.objects.filter(rtn=q, activo=True).first()
+
+        # 3. Buscar por teléfono
+        if not proveedor:
+            proveedor = Proveedor.objects.filter(telefono__icontains=q, activo=True).first()
+
+        # 4. Buscar por correo
+        if not proveedor:
+            proveedor = Proveedor.objects.filter(correo__icontains=q, activo=True).first()
+
+        # 5. Buscar por nombre parcial
+        if not proveedor:
+            proveedor = Proveedor.objects.filter(nombre__icontains=q, activo=True).first()
+
+        if proveedor:
+            return JsonResponse({
+                'encontrado': True,
+                'id': proveedor.id,
+                'nombre': proveedor.nombre,
+                'rtn': proveedor.rtn or '',
+                'telefono': proveedor.telefono or '',
+                'correo': proveedor.correo or '',
+                'direccion': proveedor.direccion or '',
+                'contacto': proveedor.contacto or '',
+            })
+
+        return JsonResponse({'encontrado': False, 'error': "Proveedor no encontrado"})
+
+    except Exception as e:
+        return JsonResponse({'encontrado': False, 'error': f'Error: {str(e)}'})
+
+
+
     
     
 from .models import Empleado, PagoEmpleado
@@ -1101,6 +1191,82 @@ def configuracion_empresa(request):
         form = EmpresaConfigForm(instance=config)
 
     return render(request, 'configuracion_empresa.html', {'form': form})
+
+
+
+@login_required
+def crear_producto_ajax(request):
+    """Crear producto desde modal en compras"""
+    if request.method == 'POST':
+        form = ProductoForm(request.POST)
+        if form.is_valid():
+            producto = form.save()
+            return JsonResponse({
+                'success': True,
+                'producto': {
+                    'id': producto.id,
+                    'codigo': producto.codigo,
+                    'nombre': producto.nombre,
+                    'precio': str(producto.precio),
+                    'tipo_impuesto': producto.tipo_impuesto,
+                }
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors
+            })
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+@login_required
+def crear_proveedor_ajax(request):
+    """Crear proveedor desde modal en compras"""
+    if request.method == 'POST':
+        form = ProveedorForm(request.POST)
+        if form.is_valid():
+            proveedor = form.save()
+            return JsonResponse({
+                'success': True,
+                'proveedor': {
+                    'id': proveedor.id,
+                    'nombre': proveedor.nombre,
+                }
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors
+            })
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+@login_required
+def sugerencias_proveedores(request):
+    """Devuelve sugerencias de proveedores para autocompletado"""
+    query = request.GET.get('q', '').strip()
+    
+    if len(query) < 2:
+        return JsonResponse({'proveedores': []})
+    
+    try:
+        proveedores = Proveedor.objects.filter(
+            activo=True,
+            nombre__icontains=query
+        )[:10]
+        
+        resultados = [{
+            'id': p.id,
+            'nombre': p.nombre,
+            'rtn': p.rtn or '',
+        } for p in proveedores]
+        
+        return JsonResponse({'proveedores': resultados})
+        
+    except Exception as e:
+        return JsonResponse({'proveedores': [], 'error': str(e)})
+
+
 
 from .models import models
 @login_required

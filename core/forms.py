@@ -130,14 +130,27 @@ class DetalleCompraForm(forms.ModelForm):
 class ProveedorForm(forms.ModelForm):
     class Meta:
         model = Proveedor
-        fields = ['nombre', 'direccion', 'telefono', 'correo']  
-        
+        fields = ['nombre', 'rtn', 'direccion', 'telefono', 'correo', 'contacto', 'activo']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'rtn': forms.TextInput(attrs={'class': 'form-control'}),
+            'direccion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control'}),
+            'correo': forms.EmailInput(attrs={'class': 'form-control'}),
+            'contacto': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+
 class CompraForm(forms.ModelForm):
     class Meta:
         model = Compra
-        fields = ['proveedor', 'tipo_pago']
+        fields = ['proveedor', 'numero_factura_proveedor', 'tipo_pago', 'fecha_recepcion', 'notas']
         widgets = {
-            'tipo_pago': forms.Select(attrs={'class': 'form-select'})
+            'proveedor': forms.Select(attrs={'class': 'form-select'}),
+            'numero_factura_proveedor': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: FACT-001'}),
+            'tipo_pago': forms.Select(attrs={'class': 'form-select'}),
+            'fecha_recepcion': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'notas': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Observaciones opcionales...'}),
         }
 
         
