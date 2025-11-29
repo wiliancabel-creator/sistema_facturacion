@@ -113,32 +113,37 @@
 
   <!-- Script de cambio de tema -->
   <script>
-    const toggleBtn = document.getElementById('themeToggle');
-    const themeIcon = document.getElementById('themeIcon');
-    const body = document.body;
+  const toggleBtn = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  const body = document.body;
+  const html = document.documentElement;
 
-    // Verificar tema guardado
-    if (localStorage.getItem('theme') === 'light') {
-      body.classList.add('light-mode');
-      themeIcon.classList.replace('bi-brightness-high-fill', 'bi-moon-stars-fill');
-    }
+// Aplicar tema guardado
+if (localStorage.getItem('theme') === 'light') {
+  body.classList.add('light-mode');
+  html.classList.add('light-mode');
+  themeIcon.classList.replace('bi-brightness-high-fill', 'bi-moon-stars-fill');
+}
 
-    toggleBtn.addEventListener('click', () => {
-      body.classList.toggle('light-mode');
-      const isLight = body.classList.contains('light-mode');
+// Evento del botón
+toggleBtn.addEventListener('click', () => {
+  body.classList.toggle('light-mode');
+  html.classList.toggle('light-mode');
 
-      if (isLight) {
-        themeIcon.classList.replace('bi-brightness-high-fill', 'bi-moon-stars-fill');
-        localStorage.setItem('theme', 'light');
-      } else {
-        themeIcon.classList.replace('bi-moon-stars-fill', 'bi-brightness-high-fill');
-        localStorage.setItem('theme', 'dark');
-      }
-    });
+  const isLight = body.classList.contains('light-mode');
+
+  if (isLight) {
+    themeIcon.classList.replace('bi-brightness-high-fill', 'bi-moon-stars-fill');
+    localStorage.setItem('theme', 'light');
+  } else {
+    themeIcon.classList.replace('bi-moon-stars-fill', 'bi-brightness-high-fill');
+    localStorage.setItem('theme', 'dark');
+  }
+});
 
 
       // Bloquear clic derecho
-    document.addEventListener('contextmenu', event => event.preventDefault());
+    //document.addEventListener('contextmenu', event => event.preventDefault());
 
       //Bloquear teclas de inspección (F12, Ctrl+Shift+I, etc.)
       document.onkeydown = function(e) {

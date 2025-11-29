@@ -1,20 +1,22 @@
 {% extends 'base.html' %}
-{% block title %}Factura Térmica{% endblock %}
+{% block title %}Factura{% endblock %}
 {% block content %}
 
 <style>
+/* ================= VISTA TÉRMICA (DEFAULT) ================= */
 #ticket {
   max-width: 320px;
-  margin: auto;
-  font-family: monospace;
+  margin: 20px auto;
+  font-family: 'Courier New', monospace;
   background: #fff;
   color: #000;
-  padding: 8px;
-  border: 1px solid #ccc;
+  padding: 12px;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* Modo oscuro */
-body.dark-mode #ticket {
+body:not(.light-mode) #ticket {
   background: #1a1a1a;
   color: #f0f0f0;
   border-color: #555;
@@ -22,35 +24,123 @@ body.dark-mode #ticket {
 
 .center { text-align: center; }
 .right  { text-align: right; }
-hr { border: 0; border-bottom: 1px dashed #999; margin: 6px 0; }
+hr { border: 0; border-bottom: 1px dashed #999; margin: 8px 0; }
 
-/* TABLA DETALLE */
 .detalle-tabla {
   width: 100%;
-  font-size: 12px;
-  margin-top: 3px;
+  font-size: 11px;
+  margin-top: 4px;
 }
 
 .detalle-tabla th {
   border-bottom: 1px dashed #999;
-  padding-bottom: 2px;
+  padding-bottom: 3px;
+  font-size: 10px;
 }
 
 .detalle-tabla td {
-  padding: 2px 0;
+  padding: 3px 2px;
 }
 
-/* Ocultar al imprimir */
+/* ================= VISTA A4 (AL IMPRIMIR) ================= */
 @media print {
-  #btn-print { display: none; }
+  /* Ocultar botones */
+  #botones-impresion { display: none !important; }
+  
+  /* IMPRESIÓN TÉRMICA (por defecto) */
+  body.print-termica #ticket {
+    max-width: 80mm;
+    margin: 0;
+    padding: 5mm;
+    border: none;
+    box-shadow: none;
+  }
+  
+  /* IMPRESIÓN A4 */
+  body.print-a4 #ticket {
+    max-width: 100%;
+    width: 190mm;
+    margin: 0 auto;
+    padding: 15mm;
+    border: 1px solid #000;
+    font-size: 12pt;
+  }
+  
+  body.print-a4 .detalle-tabla {
+    font-size: 11pt;
+  }
+  
+  body.print-a4 .detalle-tabla th,
+  body.print-a4 .detalle-tabla td {
+    padding: 6px 4px;
+  }
+  
+  body.print-a4 hr {
+    border-bottom: 1px solid #000;
+    margin: 12px 0;
+  }
+}
+
+/* Botones de impresión */
+#botones-impresion {
+  text-align: center;
+  margin: 20px 0;
+  padding: 15px;
+  background: var(--card-dark);
+  border-radius: 8px;
+  max-width: 500px;
+  margin: 20px auto;
+}
+
+body.light-mode #botones-impresion {
+  background: var(--card-light);
+}
+
+#botones-impresion .btn {
+  margin: 5px;
+  min-width: 180px;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ticket-header {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.ticket-empresa {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.total-final {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.pagos-lista {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+
+.pagos-lista li {
+  padding: 4px 0;
+  border-bottom: 1px dotted #999;
 }
 </style>
 
 <div id="ticket">
 
   <!-- ENCABEZADO DEL NEGOCIO -->
-  <div class="center">
-    <strong>{{ empresa.nombre }}</strong><br>
+  <div class="center ticket-empresa">
+    {{ empresa.nombre }}
+  </div>
+  <div class="center" style="font-size: 11px;">
     RTN: {{ empresa.rtn }}<br>
     {{ empresa.direccion }}<br>
     Tel: {{ empresa.telefono }}<br>
@@ -60,47 +150,64 @@ hr { border: 0; border-bottom: 1px dashed #999; margin: 6px 0; }
   <hr>
 
   <!-- NUMERO DE FACTURA -->
-  <strong>Factura N°:</strong>
-  {{ venta.numero_factura }}<br>
+  <div class="center ticket-header">
+    FACTURA N° {{ venta.numero_factura }}
+  </div>
+
+  <hr>
 
   <!-- CAI Y RANGOS -->
-  <strong>CAI:</strong>
-  {% if venta.cai %}{{ venta.cai.codigo }}{% else %}SIN CAI{% endif %}<br>
+  <div style="font-size: 11px;">
+    <strong>CAI:</strong>
+    {% if venta.cai %}{{ venta.cai.codigo }}{% else %}SIN CAI{% endif %}<br>
 
-  {% if venta.cai %}
-      <strong>Rango:</strong>
+    {% if venta.cai %}
+      <strong>Rango Autorizado:</strong><br>
       {{ venta.cai.prefijo }}{{ venta.cai.rango_inicial|stringformat:"08d" }}
-      a
+      al
       {{ venta.cai.prefijo }}{{ venta.cai.rango_final|stringformat:"08d" }}<br>
 
-      <strong>Válido hasta:</strong> {{ venta.cai.fecha_limite|date:"d/m/Y" }}<br>
-  {% endif %}
+      <strong>Fecha Límite:</strong> {{ venta.cai.fecha_limite|date:"d/m/Y" }}<br>
+    {% endif %}
 
-  <strong>Fecha:</strong> {{ venta.fecha|date:"d/m/Y H:i" }}<br>
-  <strong>Pago:</strong> {{ venta.tipo_pago|title }}<br>
-  <h5>Pagos:</h5>
-<ul>
-  {% for pago in venta.pagos.all %}
-    <li>{{ pago.get_metodo_display }} — L {{ pago.monto }} {% if pago.referencia %} (Ref: {{ pago.referencia }}){% endif %}</li>
-  {% endfor %}
-</ul>
+    <strong>Fecha Emisión:</strong> {{ venta.fecha|date:"d/m/Y H:i" }}<br>
+    <strong>Tipo Pago:</strong> {{ venta.tipo_pago|title }}
+  </div>
 
+  <hr>
+
+  <!-- PAGOS -->
+  <div style="font-size: 11px;">
+    <strong>Forma(s) de Pago:</strong>
+    <ul class="pagos-lista">
+      {% for pago in venta.pagos.all %}
+        <li>
+          {{ pago.get_metodo_display }}: L {{ pago.monto|floatformat:2 }}
+          {% if pago.referencia %} - Ref: {{ pago.referencia }}{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
 
   <hr>
 
   <!-- DATOS DEL CLIENTE -->
-  <strong>Cliente:</strong> {{ venta.cliente.nombre }}<br>
-  {% if venta.cliente.rtn %}<strong>RTN:</strong> {{ venta.cliente.rtn }}<br>{% endif %}
-  {% if venta.cliente.direccion %}<strong>Dirección:</strong> {{ venta.cliente.direccion }}<br>{% endif %}
-  {% if venta.cliente.telefono %}<strong>Tel:</strong> {{ venta.cliente.telefono }}<br>{% endif %}
+  <div style="font-size: 11px;">
+    <strong>CLIENTE:</strong> {{ venta.cliente.nombre }}<br>
+    {% if venta.cliente.rtn %}<strong>RTN:</strong> {{ venta.cliente.rtn }}<br>{% endif %}
+    {% if venta.cliente.direccion %}<strong>Dirección:</strong> {{ venta.cliente.direccion }}<br>{% endif %}
+    {% if venta.cliente.telefono %}<strong>Teléfono:</strong> {{ venta.cliente.telefono }}<br>{% endif %}
+  </div>
 
   <hr>
 
-  <strong>Detalle:</strong><br>
+  <div class="center" style="font-weight: bold; margin: 8px 0;">
+    DETALLE DE PRODUCTOS
+  </div>
 
   {% for item in detalles %}
 
-    <div style="font-weight:bold; margin-top:6px;">
+    <div style="font-weight:bold; margin-top:8px; font-size: 12px;">
       {{ item.producto.nombre }}
     </div>
 
@@ -111,59 +218,144 @@ hr { border: 0; border-bottom: 1px dashed #999; margin: 6px 0; }
           <th>Precio</th>
           <th>Desc</th>
           <th>ISV</th>
-          <th class="right">Subt</th>
+          <th class="right">Subtotal</th>
         </tr>
       </thead>
 
       <tbody>
         <tr>
           <td>{{ item.cantidad }}</td>
-          <td>{{ item.precio_unitario }}</td>
-          <td>{{ item.descuento }}%</td>
+          <td>L {{ item.precio_unitario|floatformat:2 }}</td>
+          <td>{{ item.descuento|floatformat:1 }}%</td>
           <td>
             {% if item.producto.tipo_impuesto == 'G15' %}15%
             {% elif item.producto.tipo_impuesto == 'G18' %}18%
-            {% else %}0%
+            {% else %}Exento
             {% endif %}
           </td>
-          <td class="right">L {{ item.total_linea }}</td>
+          <td class="right">L {{ item.total_linea|floatformat:2 }}</td>
         </tr>
       </tbody>
     </table>
 
-    <hr>
-
   {% endfor %}
 
+  <hr>
+
   <!-- TOTALES FISCALES -->
-  <strong>Totales:</strong><br>
-  Exento: L {{ venta.subtotal_exento }}<br>
-  Gravado 15%: L {{ venta.subtotal_g15 }}<br>
-  Gravado 18%: L {{ venta.subtotal_g18 }}<br>
-  ISV 15%: L {{ venta.impuesto_15 }}<br>
-  ISV 18%: L {{ venta.impuesto_18 }}<br>
+  <div style="font-size: 11px;">
+    <strong>RESUMEN DE IMPUESTOS:</strong><br>
+    <table style="width: 100%; margin-top: 4px;">
+      <tr>
+        <td>Importe Exento:</td>
+        <td class="right">L {{ venta.subtotal_exento|floatformat:2 }}</td>
+      </tr>
+      <tr>
+        <td>Importe Gravado 15%:</td>
+        <td class="right">L {{ venta.subtotal_g15|floatformat:2 }}</td>
+      </tr>
+      <tr>
+        <td>Importe Gravado 18%:</td>
+        <td class="right">L {{ venta.subtotal_g18|floatformat:2 }}</td>
+      </tr>
+      <tr>
+        <td>ISV 15%:</td>
+        <td class="right">L {{ venta.impuesto_15|floatformat:2 }}</td>
+      </tr>
+      <tr>
+        <td>ISV 18%:</td>
+        <td class="right">L {{ venta.impuesto_18|floatformat:2 }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <hr style="border-bottom: 2px solid #000;">
+
+  <div class="center total-final">
+    TOTAL A PAGAR: L {{ venta.total|floatformat:2 }}
+  </div>
+
   <hr>
 
-  <strong>Total a pagar: L {{ venta.total }}</strong>
+  <div style="font-size: 11px;">
+    <strong>SON:</strong> {{ total_letras }}
+  </div>
 
-  <hr>
+  <br>
 
-  <strong>Son:</strong><br>
-  {{ total_letras }}
+  <div class="center" style="font-size: 10px; margin-top: 15px;">
+    _________________________________<br>
+    FIRMA DEL CLIENTE
+  </div>
 
-  <br><br>
-  <div class="center">
-    ------------------------------<br>
-    Firma del cliente
+  <br>
+
+  <div class="center" style="font-size: 9px; font-style: italic;">
+    ¡Gracias por su compra!<br>
+    Sistema Fajardo
   </div>
 
 </div>
 
-<div class="text-center mt-3">
-  <button id="btn-print" class="btn btn-primary" onclick="window.print()">
-    🖨️ Imprimir
+<!-- BOTONES DE IMPRESIÓN -->
+<div id="botones-impresion">
+  <h5 class="mb-3">Seleccione tipo de impresión:</h5>
+  <button onclick="imprimirTermica()" class="btn btn-primary">
+    🖨️ Imprimir Térmica (58/80mm)
   </button>
+  <button onclick="imprimirA4()" class="btn btn-success">
+    📄 Imprimir en A4
+  </button>
+  <a href="{% url 'resumen_ventas' %}" class="btn btn-secondary">
+    ← Volver a Ventas
+  </a>
 </div>
+
+<script>
+function imprimirTermica() {
+  // Agregar clase para impresión térmica
+  document.body.classList.add('print-termica');
+  document.body.classList.remove('print-a4');
+  
+  // Configurar para impresora térmica
+  setTimeout(() => {
+    window.print();
+    // Limpiar clases después de imprimir
+    setTimeout(() => {
+      document.body.classList.remove('print-termica');
+    }, 500);
+  }, 100);
+}
+
+function imprimirA4() {
+  // Agregar clase para impresión A4
+  document.body.classList.add('print-a4');
+  document.body.classList.remove('print-termica');
+  
+  // Configurar para A4
+  setTimeout(() => {
+    window.print();
+    // Limpiar clases después de imprimir
+    setTimeout(() => {
+      document.body.classList.remove('print-a4');
+    }, 500);
+  }, 100);
+}
+
+// Detectar tecla de impresión rápida
+document.addEventListener('keydown', (e) => {
+  // Ctrl + P = Térmica
+  if (e.ctrlKey && e.key === 'p') {
+    e.preventDefault();
+    imprimirTermica();
+  }
+  // Ctrl + Shift + P = A4
+  if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+    e.preventDefault();
+    imprimirA4();
+  }
+});
+</script>
 
 {% endblock %}
 

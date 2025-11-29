@@ -78,6 +78,8 @@ urlpatterns = [
     path('sugerencias-productos/', views.sugerencias_productos, name='sugerencias_productos'),
     path("buscar-proveedor/", views.buscar_proveedor, name="buscar_proveedor"),
     path('sugerencias-proveedores/', views.sugerencias_proveedores, name='sugerencias_proveedores'),
+    path('crear-cliente-ajax/', views.crear_cliente_ajax, name='crear_cliente_ajax'),
+    path('sugerencias-clientes/', views.sugerencias_clientes, name='sugerencias_clientes'),
     
 ]
 

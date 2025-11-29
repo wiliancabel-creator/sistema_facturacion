@@ -1304,3 +1304,72 @@ def sugerencias_productos(request):
         
     except Exception as e:
         return JsonResponse({'productos': [], 'error': str(e)})
+  
+  
+    
+    
+@login_required
+def crear_cliente_ajax(request):
+    """Crear cliente desde modal en ventas"""
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        rtn = request.POST.get('rtn', '').strip()
+        telefono = request.POST.get('telefono', '').strip()
+        direccion = request.POST.get('direccion', '').strip()
+        
+        if not nombre:
+            return JsonResponse({
+                'success': False,
+                'error': 'El nombre es obligatorio'
+            })
+        
+        try:
+            cliente = Cliente.objects.create(
+                nombre=nombre,
+                rtn=rtn if rtn else None,
+                telefono=telefono if telefono else None,
+                direccion=direccion if direccion else None
+            )
+            return JsonResponse({
+                'success': True,
+                'cliente': {
+                    'id': cliente.id,
+                    'nombre': cliente.nombre,
+                }
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+@login_required
+def sugerencias_clientes(request):
+    """Devuelve sugerencias de clientes para autocompletado"""
+    query = request.GET.get('q', '').strip()
+    
+    if len(query) < 2:
+        return JsonResponse({'clientes': []})
+    
+    try:
+        from django.db.models import Q
+        clientes = Cliente.objects.filter(
+            Q(nombre__icontains=query) |
+            Q(rtn__icontains=query) |
+            Q(telefono__icontains=query)
+        )[:10]
+        
+        resultados = [{
+            'id': c.id,
+            'nombre': c.nombre,
+            'rtn': c.rtn or '',
+            'telefono': c.telefono or '',
+        } for c in clientes]
+        
+        return JsonResponse({'clientes': resultados})
+        
+    except Exception as e:
+        return JsonResponse({'clientes': [], 'error': str(e)})    

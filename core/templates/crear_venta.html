@@ -29,7 +29,20 @@
         <div id="error-msg" class="text-danger small"></div>
 
         <h5 class="mt-4">🧍 Cliente</h5>
-          {{ cliente_form.cliente }}
+<div class="autocomplete-container mb-3">
+  <div class="input-group">
+    <input type="text" id="cliente-input" class="form-control" placeholder="Buscar cliente o usar Consumidor Final..." autocomplete="off">
+    <button type="button" class="btn btn-success btn-sm" id="btn-nuevo-cliente" title="Agregar nuevo cliente">
+      ➕
+    </button>
+  </div>
+  <input type="hidden" name="cliente" id="cliente-id" required>
+  <div id="cliente-suggestions" class="autocomplete-suggestions"></div>
+</div>
+<button type="button" class="btn btn-outline-primary btn-sm w-100 mb-3" id="btn-consumidor-final">
+  👤 Usar Consumidor Final
+</button>
+<small class="text-muted d-block mb-3">Cliente seleccionado: <strong id="cliente-nombre-display">Ninguno</strong></small>
   
 
         <div class="mb-2">{{ cliente_form.tipo_pago }}</div>
@@ -101,6 +114,49 @@
     </div>
   </div>
 </div>
+
+
+<!-- ========== MODAL NUEVO CLIENTE ========== -->
+<div class="modal fade" id="modalNuevoCliente" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">➕ Agregar Nuevo Cliente</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="form-nuevo-cliente">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">Nombre *</label>
+            <input type="text" name="nombre" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">RTN</label>
+            <input type="text" name="rtn" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Teléfono</label>
+            <input type="text" name="telefono" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Dirección</label>
+            <textarea name="direccion" class="form-control" rows="2"></textarea>
+          </div>
+          <div id="error-cliente" class="alert alert-danger d-none"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="btn-guardar-cliente">💾 Guardar Cliente</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
 
 <style>
 .autocomplete-container {
@@ -376,10 +432,11 @@ codigoInput.addEventListener('input', (e) => {
     }, 300);
 });
 
-function mostrarSugerencias(productos) {
+// ✅ Cambié "productos" por "sugerencias"
+function mostrarSugerencias(sugerencias) {  // ← Ahora se llama "sugerencias"
     suggestionsBox.innerHTML = '';
     
-    productos.forEach(p => {
+    sugerencias.forEach(p => {  // ← Ahora recorre "sugerencias"
         const item = document.createElement('div');
         item.className = 'autocomplete-item';
         item.innerHTML = `
@@ -387,13 +444,14 @@ function mostrarSugerencias(productos) {
             <small>Código de barra: ${p.codigo_barra || 'N/A'} | Precio: L ${p.precio} | Stock: ${p.stock}</small>
         `;
         
-      item.addEventListener('click', () => {
-    // Al hacer clic, agregar el producto
+        item.addEventListener('click', () => {
+            // ✅ Ahora "productos" se refiere al array global
             const existeEnTabla = productos.find(prod => prod.id === p.id);
+            
             if (existeEnTabla) {
                 existeEnTabla.cantidad++;
             } else {
-                productos.push({
+                productos.push({  // ✅ Agrega al array global
                     id: p.id,
                     codigo: p.codigo,
                     codigo_barra: p.codigo_barra || '',
@@ -409,7 +467,7 @@ function mostrarSugerencias(productos) {
             codigoInput.value = '';
             suggestionsBox.classList.remove('show');
             codigoInput.focus();  
-});        
+        });        
         
         suggestionsBox.appendChild(item);
     });
@@ -523,6 +581,123 @@ document.addEventListener('click', (e) => {
   renderTabla();
 
 }); // END DOMContentLoaded
+
+// ========== BUSCADOR DINÁMICO DE CLIENTES ==========
+const clienteInput = document.getElementById('cliente-input');
+const clienteSuggestions = document.getElementById('cliente-suggestions');
+const clienteIdInput = document.getElementById('cliente-id');
+const clienteNombreDisplay = document.getElementById('cliente-nombre-display');
+let timeoutCliente = null;
+
+clienteInput.addEventListener('input', (e) => {
+  const query = e.target.value.trim();
+  clearTimeout(timeoutCliente);
+  
+  if (query.length < 2) {
+    clienteSuggestions.classList.remove('show');
+    return;
+  }
+  
+  timeoutCliente = setTimeout(() => {
+    fetch(`/sugerencias-clientes/?q=${encodeURIComponent(query)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.clientes && data.clientes.length > 0) {
+          mostrarSugerenciasClientes(data.clientes);
+        } else {
+          clienteSuggestions.classList.remove('show');
+        }
+      })
+      .catch(err => console.error('Error:', err));
+  }, 300);
+});
+
+function mostrarSugerenciasClientes(clientes) {
+  clienteSuggestions.innerHTML = '';
+  
+  clientes.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'autocomplete-item';
+    item.innerHTML = `
+      <strong>${c.nombre}</strong>
+      <small>${c.rtn ? `RTN: ${c.rtn}` : ''} ${c.telefono ? `| Tel: ${c.telefono}` : ''}</small>
+    `;
+    
+    item.addEventListener('click', () => {
+      clienteInput.value = c.nombre;
+      clienteIdInput.value = c.id;
+      clienteNombreDisplay.textContent = c.nombre;
+      clienteSuggestions.classList.remove('show');
+    });
+    
+    clienteSuggestions.appendChild(item);
+  });
+  
+  clienteSuggestions.classList.add('show');
+}
+
+// Cerrar sugerencias al hacer clic fuera
+document.addEventListener('click', (e) => {
+  if (!clienteInput.contains(e.target) && !clienteSuggestions.contains(e.target)) {
+    clienteSuggestions.classList.remove('show');
+  }
+});
+
+// ========== BOTÓN CONSUMIDOR FINAL ==========
+document.getElementById('btn-consumidor-final').addEventListener('click', () => {
+  // Buscar el ID del cliente "CONSUMIDOR FINAL"
+  fetch('/sugerencias-clientes/?q=CONSUMIDOR')
+    .then(r => r.json())
+    .then(data => {
+      if (data.clientes && data.clientes.length > 0) {
+        const consumidor = data.clientes.find(c => c.nombre.toUpperCase().includes('CONSUMIDOR FINAL'));
+        if (consumidor) {
+          clienteInput.value = consumidor.nombre;
+          clienteIdInput.value = consumidor.id;
+          clienteNombreDisplay.textContent = consumidor.nombre;
+        } else {
+          alert('No se encontró el cliente CONSUMIDOR FINAL en la base de datos');
+        }
+      }
+    });
+});
+
+// ========== MODAL NUEVO CLIENTE ==========
+document.getElementById('btn-nuevo-cliente').addEventListener('click', () => {
+  const modal = new bootstrap.Modal(document.getElementById('modalNuevoCliente'));
+  modal.show();
+});
+
+document.getElementById('btn-guardar-cliente').addEventListener('click', () => {
+  const formData = new FormData(document.getElementById('form-nuevo-cliente'));
+  
+  fetch('/crear-cliente-ajax/', {
+    method: 'POST',
+    body: formData,
+    headers: {'X-CSRFToken': formData.get('csrfmiddlewaretoken')}
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      clienteInput.value = data.cliente.nombre;
+      clienteIdInput.value = data.cliente.id;
+      clienteNombreDisplay.textContent = data.cliente.nombre;
+      bootstrap.Modal.getInstance(document.getElementById('modalNuevoCliente')).hide();
+      document.getElementById('form-nuevo-cliente').reset();
+      document.getElementById('error-cliente').classList.add('d-none');
+    } else {
+      document.getElementById('error-cliente').textContent = data.error || 'Error al crear cliente';
+      document.getElementById('error-cliente').classList.remove('d-none');
+    }
+  })
+  .catch(err => {
+    document.getElementById('error-cliente').textContent = 'Error de conexión';
+    document.getElementById('error-cliente').classList.remove('d-none');
+  });
+});
+
+
+
 </script>
 
 

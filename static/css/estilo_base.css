@@ -1064,3 +1064,148 @@ body.light-mode .cotizacion-layout #form-container {
     font-size: 16px;
     color: var(--bs-success, #198754);
 }
+
+
+
+
+/* ============================================================
+   🔥 SISTEMA FAJARDO — THEME GLOBAL (MODO CLARO / OSCURO)
+   ✅ Compatible con todas las vistas: ventas, compras, productos,
+      resúmenes, modal, sugerencias, formularios, tablas, etc.
+   ============================================================ */
+
+/* ================= BASE VARIABLES ================= */
+:root {
+  --radius: 6px;
+}
+
+/* ================= MODO CLARO ================= */
+.light-mode {
+  --bs-body-bg: #ffffff;
+  --bs-body-color: #1a1a1a;
+  --bs-border-color: #d0d0d0;
+
+  --bs-primary-bg-subtle: #e8f1ff;
+  --bs-primary-text: #005fcc;
+
+  --bs-card-bg: #ffffff;
+  --bs-table-bg: #ffffff;
+
+  --bs-table-striped-bg: #f5f7fa;
+  --bs-table-hover-bg: #e8eef7;
+
+  --bs-warning-bg: #fff8d9;
+  --bs-danger-bg: #ffe0e0;
+}
+
+/* ================= MODO OSCURO ================= */
+body:not(.light-mode) {
+  --bs-body-bg: #1b1e22;
+  --bs-body-color: #e8e8e8;
+  --bs-border-color: #3b3f45;
+
+  --bs-primary-bg-subtle: #172b42;
+  --bs-primary-text: #4db8ff;
+
+  --bs-card-bg: #22262b;
+  --bs-table-bg: #262b31;
+
+  --bs-table-striped-bg: #2c3238;
+  --bs-table-hover-bg: #333a42;
+
+  --bs-warning-bg: #5c4d00;
+  --bs-danger-bg: #5c1f1f;
+}
+
+/* ================= APLICACIÓN GLOBAL ================= */
+body, html {
+  background-color: var(--bs-body-bg) !important;
+  color: var(--bs-body-color) !important;
+}
+
+/* ================= CARDS ================= */
+.card, .card-body, .card-header {
+  background-color: var(--bs-card-bg) !important;
+  color: var(--bs-body-color) !important;
+  border-color: var(--bs-border-color) !important;
+}
+
+/* ================= FORM INPUTS ================= */
+input, select, textarea {
+  background-color: var(--bs-card-bg) !important;
+  color: var(--bs-body-color) !important;
+  border-color: var(--bs-border-color) !important;
+}
+
+/* ================= TABLAS ================= */
+.table {
+  background-color: var(--bs-table-bg) !important;
+  color: var(--bs-body-color) !important;
+}
+
+.table thead th {
+  background-color: var(--bs-primary-bg-subtle) !important;
+  color: var(--bs-primary-text) !important;
+}
+
+/* ✅ filas alternadas visibles */
+.table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: var(--bs-table-striped-bg) !important;
+}
+
+/* ✅ hover visible */
+.table-hover tbody tr:hover {
+  background-color: var(--bs-table-hover-bg) !important;
+}
+
+/* ✅ stock bajo visible */
+.table-warning {
+  background-color: var(--bs-warning-bg) !important;
+  color: var(--bs-body-color) !important;
+}
+
+.table-danger {
+  background-color: var(--bs-danger-bg) !important;
+  color: var(--bs-body-color) !important;
+}
+
+/* ================= AUTOCOMPLETE ================= */
+.autocomplete-suggestions {
+  background-color: var(--bs-card-bg) !important;
+  border-color: var(--bs-border-color) !important;
+  color: var(--bs-body-color) !important;
+  z-index: 5000 !important;
+}
+
+.autocomplete-item:hover {
+  background-color: var(--bs-primary-text) !important;
+  color: white !important;
+}
+
+/* ================= MODALS ================= */
+.modal-content {
+  background-color: var(--bs-card-bg) !important;
+  color: var(--bs-body-color) !important;
+  border-color: var(--bs-border-color) !important;
+}
+
+/* ================= BUTTONS ================= */
+.btn {
+  border-radius: var(--radius);
+}
+
+.btn-primary {
+  background-color: var(--bs-primary-text);
+  border-color: var(--bs-primary-text);
+}
+
+/* ================= RESÚMENES ================= */
+#total-venta,
+#total-compra {
+  color: #00ff88 !important;
+  font-weight: bold;
+}
+
+
+
+

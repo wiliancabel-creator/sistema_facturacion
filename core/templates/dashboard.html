@@ -32,11 +32,11 @@
       {% if perms.core.delete_cai %}
         <div class="dashboard-card card-simple">
           <h4>Total Ventas</h4>
-          <p>L {{ total_ventas }}</p>
+          <p>L {{ total_ventas|floatformat:2 }}</p>
         </div>
         <div class="dashboard-card card-simple">
           <h4>Total Compras</h4>
-          <p>L {{ total_compras }}</p>
+          <p>L {{ total_compras|floatformat:2 }}</p>
         </div>
       {% endif %}
     {% endif %}
