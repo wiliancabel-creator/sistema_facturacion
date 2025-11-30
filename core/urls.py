@@ -46,6 +46,7 @@ urlpatterns = [
     # Proveedores
     path('proveedores/', views.lista_proveedores, name='lista_proveedores'),
     path('proveedores/registrar/', views.registrar_proveedor, name='registrar_proveedor'),
+    path("buscar-proveedor/", views.buscar_proveedor, name="buscar_proveedor"),
     
     # CAI
     path('cai/', views.listar_cai, name='listar_cai'),
@@ -76,7 +77,6 @@ urlpatterns = [
     path('crear-producto-ajax/', views.crear_producto_ajax, name='crear_producto_ajax'),
     path('crear-proveedor-ajax/', views.crear_proveedor_ajax, name='crear_proveedor_ajax'),
     path('sugerencias-productos/', views.sugerencias_productos, name='sugerencias_productos'),
-    path("buscar-proveedor/", views.buscar_proveedor, name="buscar_proveedor"),
     path('sugerencias-proveedores/', views.sugerencias_proveedores, name='sugerencias_proveedores'),
     path('crear-cliente-ajax/', views.crear_cliente_ajax, name='crear_cliente_ajax'),
     path('sugerencias-clientes/', views.sugerencias_clientes, name='sugerencias_clientes'),

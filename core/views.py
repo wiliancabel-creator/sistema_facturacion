@@ -52,7 +52,7 @@ def buscar_producto(request):
 @login_required
 @permission_required('core.view_producto', raise_exception=True)
 def listar_productos(request):
-    query = request.GET.get('q')
+    query = request.GET.get('q', '') 
     categoria_id = request.GET.get('categoria')
 
     productos = Producto.objects.all()

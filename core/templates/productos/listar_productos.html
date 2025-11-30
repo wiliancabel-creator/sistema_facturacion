@@ -2,74 +2,218 @@
 {% block title %}Lista de Productos{% endblock %}
 {% block content %}
 
-
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between align-items-center mb-3">
     <h2>📦 Lista de Productos</h2>
-
     <div class="d-flex gap-2">
         <a href="{% url 'crear_categoria' %}" class="btn btn-secondary">➕ Agregar Categoría</a>
         <a href="{% url 'agregar_producto' %}" class="btn btn-success">➕ Agregar nuevo producto</a>
     </div>
 </div>
 
-<form method="get" class="mb-3 d-flex gap-2 align-items-center" role="search">
-    <input type="text" name="q" class="form-control" placeholder="🔍 Buscar producto..." value="{{ query }}">
+<!-- Búsqueda y filtros automáticos -->
+<div class="mb-3">
+    <div class="row g-2">
+        <div class="col-md-8">
+            <input type="text" id="search-input" class="form-control" placeholder="🔍 Buscar por código, nombre o código de barra..." value="{{ query }}" autocomplete="off">
+        </div>
+        <div class="col-md-4">
+            <select id="categoria-select" class="form-select">
+                <option value="">📂 Todas las categorías</option>
+                {% for c in categorias %}
+                    <option value="{{ c.id }}" {% if categoria_seleccionada == c.id|stringformat:"s" %}selected{% endif %}>
+                        {{ c.nombre }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <small class="text-muted">💡 La búsqueda se actualiza automáticamente mientras escribes</small>
+</div>
+
+<!-- Indicador de carga -->
+<div id="loading-indicator" class="alert alert-info d-none">
+    ⏳ Cargando productos...
+</div>
+
+<!-- Tabla de productos -->
+<div id="productos-container">
+    <table class="table table-bordered table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Código / ID</th>
+                <th>Código de Barra</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Categoría</th>
+                <th>Stock</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="productos-tbody">
+            {% for producto in productos %}
+            <tr {% if producto.necesita_restock %}class="table-warning"{% endif %}>
+                <td>{{ producto.codigo }}</td>
+                <td>{{ producto.codigo_barra|default:"—" }}</td>
+                <td>{{ producto.nombre }}</td>
+                <td>L {{ producto.precio|floatformat:2 }}</td>
+                <td>
+                    {% if producto.categoria %}
+                        {{ producto.categoria.nombre }}
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge {% if producto.necesita_restock %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                        {{ producto.stock }}
+                    </span>
+                </td>
+                <td>
+                    <a href="{% url 'editar_producto' producto.id %}" class="btn btn-warning btn-sm" title="Editar">✏️</a>
+                    <a href="{% url 'eliminar_producto' producto.id %}" class="btn btn-danger btn-sm" title="Eliminar"
+                       onclick="return confirm('¿Seguro que deseas eliminar este producto?')">🗑️</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center text-muted">No hay productos registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Total de resultados -->
+<div class="alert alert-secondary">
+    <strong>Total de productos:</strong> <span id="total-productos">{{ productos.count }}</span>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('search-input');
+    const categoriaSelect = document.getElementById('categoria-select');
+    const productosTbody = document.getElementById('productos-tbody');
+    const productosContainer = document.getElementById('productos-container');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const totalProductos = document.getElementById('total-productos');
     
-    <select name="categoria" class="form-select">
-        <option value="">📂 Todas las categorías</option>
-        {% for c in categorias %}
-            <option value="{{ c.id }}" {% if categoria_seleccionada == c.id|stringformat:"s" %}selected{% endif %}>
-                {{ c.nombre }}
-            </option>
-        {% endfor %}
-    </select>
+    let timeoutId = null;
 
-    <button type="submit" class="btn btn-outline-primary">Buscar</button>
-</form>
+    // Función para hacer la búsqueda automática
+    function buscarProductos() {
+        const query = searchInput.value.trim();
+        const categoriaId = categoriaSelect.value;
+        
+        // Construir URL con parámetros
+        let url = '/productos/?';
+        if (query) url += `q=${encodeURIComponent(query)}&`;
+        if (categoriaId) url += `categoria=${categoriaId}&`;
+        
+        // Mostrar indicador de carga
+        loadingIndicator.classList.remove('d-none');
+        
+        // Hacer petición AJAX
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Crear un elemento temporal para parsear el HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Extraer solo el tbody
+            const nuevoTbody = doc.querySelector('#productos-tbody');
+            if (nuevoTbody) {
+                productosTbody.innerHTML = nuevoTbody.innerHTML;
+            }
+            
+            // Actualizar total
+            const filas = productosTbody.querySelectorAll('tr');
+            const vacio = filas.length === 1 && filas[0].querySelector('td[colspan]');
+            totalProductos.textContent = vacio ? '0' : filas.length;
+            
+            // Ocultar indicador
+            loadingIndicator.classList.add('d-none');
+            
+            // Actualizar URL sin recargar (para que funcione el back del navegador)
+            if (query || categoriaId) {
+                window.history.pushState({}, '', url);
+            } else {
+                window.history.pushState({}, '', '/productos/');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            loadingIndicator.classList.add('d-none');
+            productosTbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">❌ Error al cargar productos</td></tr>';
+        });
+    }
 
+    // Búsqueda mientras escribe (con delay de 300ms)
+    searchInput.addEventListener('input', () => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            buscarProductos();
+        }, 300);
+    });
 
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <!-- <th>ID</th> -->
-            <th>Código / ID</th>
-            <th>Código de Barra</th>
-            <th>Nombre</th>
-            <th>Precio</th>
-            <th>Categoría</th>
-            <th>Stock</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for producto in productos %}
-        <tr {% if producto.necesita_restock %}class="table-warning"{% endif %}>
-            <!-- <td>{{ producto.id }}</td> -->
-            <td>{{ producto.codigo }}</td>
-            <td>{{ producto.codigo_barra|default:"—" }}</td>
-            <td>{{ producto.nombre }}</td>
-            <td>L {{ producto.precio }}</td>
-            <td>
-        {% if producto.categoria %}
-        {{ producto.categoria.nombre }}
-        {% else %}
-        <span class="text-muted">—</span>  {# o "Sin categoría" si preferís #}
-        {% endif %}
-        </td>
+    // Filtro de categoría inmediato
+    categoriaSelect.addEventListener('change', () => {
+        buscarProductos();
+    });
 
-            <td>{{ producto.stock }}</td>
-            <td>
-                <a href="{% url 'editar_producto' producto.id %}" class="btn btn-warning btn-sm">✏️</a>
-                <a href="{% url 'eliminar_producto' producto.id %}" class="btn btn-danger btn-sm"
-                   onclick="return confirm('¿Seguro que deseas eliminar este producto?')">🗑</a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="8" class="text-center">No hay productos registrados.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    // Búsqueda al presionar Enter
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(timeoutId);
+            buscarProductos();
+        }
+    });
+
+    // Manejar botón "atrás" del navegador
+    window.addEventListener('popstate', () => {
+        location.reload();
+    });
+});
+</script>
+
+<style>
+/* Animación suave para la tabla */
+#productos-tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+#productos-tbody tr:hover {
+    background-color: var(--table-hover-dark);
+}
+
+body.light-mode #productos-tbody tr:hover {
+    background-color: var(--table-hover-light);
+}
+
+/* Indicador de carga */
+#loading-indicator {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1000;
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Badges de stock */
+.badge {
+    font-size: 14px;
+    padding: 6px 10px;
+}
+</style>
 
 {% endblock %}
