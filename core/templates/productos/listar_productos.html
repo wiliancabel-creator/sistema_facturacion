@@ -50,7 +50,7 @@
             </tr>
         </thead>
         <tbody id="productos-tbody">
-            {% for producto in productos %}
+            {% for producto in page_obj.object_list %}
             <tr {% if producto.necesita_restock %}class="table-warning"{% endif %}>
                 <td>{{ producto.codigo }}</td>
                 <td>{{ producto.codigo_barra|default:"—" }}</td>
@@ -81,6 +81,26 @@
             {% endfor %}
         </tbody>
     </table>
+
+        <div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; primera</a>
+            <a href="?page={{ page_obj.previous_page_number }}">anterior</a>
+        {% endif %}
+
+        <span class="current">
+            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">siguiente</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">última &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+</div>
+
 </div>
 
 <!-- Total de resultados -->

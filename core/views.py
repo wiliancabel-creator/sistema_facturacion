@@ -35,24 +35,65 @@ from .forms import EmpresaConfigForm
 @login_required
 @permission_required('core.view_producto', raise_exception=True)
 def buscar_producto(request):
-    codigo = request.GET.get('codigo')
+    """
+    Busca un producto por ID, código interno, código de barra o nombre parcial.
+    """
+    codigo = request.GET.get('codigo', '').strip()
+
+    if not codigo:
+        return JsonResponse({'encontrado': False, 'error': 'Código vacío'})
+
+    producto = None
+
     try:
-        producto = Producto.objects.get(codigo=codigo)
+        # 1. Buscar por ID numérico
+        if codigo.isdigit():
+            producto = Producto.objects.filter(id=int(codigo), activo=True).first()
+
+        # 2. Buscar por código de barra
+        if not producto:
+            producto = Producto.objects.filter(codigo_barra=codigo, activo=True).first()
+
+        # 3. Buscar por código interno
+        if not producto:
+            producto = Producto.objects.filter(codigo=codigo, activo=True).first()
+
+        # 4. Buscar por nombre parcial
+        if not producto:
+            producto = Producto.objects.filter(nombre__icontains=codigo, activo=True).first()
+
+        if producto:
+            return JsonResponse({
+                'encontrado': True,
+                'id': producto.id,
+                'codigo': producto.codigo,
+                'codigo_barra': producto.codigo_barra or '',
+                'nombre': producto.nombre,
+                'precio': str(producto.precio),
+                'stock': producto.stock,                         # 🔥 AHORA SÍ
+                'tipo_impuesto': producto.tipo_impuesto
+            })
+
         return JsonResponse({
-            'encontrado': True,
-            'id': producto.id,
-            'nombre': producto.nombre,
-            'precio': float(producto.precio)
+            'encontrado': False,
+            'error': f'Producto "{codigo}" no encontrado'
         })
-    except Producto.DoesNotExist:
-        return JsonResponse({'encontrado': False})
+
+    except Exception as e:
+        return JsonResponse({
+            'encontrado': False,
+            'error': f'Error en búsqueda: {str(e)}'
+        })
 
 
+
+
+from django.core.paginator import Paginator
 
 @login_required
 @permission_required('core.view_producto', raise_exception=True)
 def listar_productos(request):
-    query = request.GET.get('q', '') 
+    query = request.GET.get('q', '')
     categoria_id = request.GET.get('categoria')
 
     productos = Producto.objects.all()
@@ -67,16 +108,20 @@ def listar_productos(request):
 
     if categoria_id:
         productos = productos.filter(categoria_id=categoria_id)
-    
+
+    # Agregamos paginación, por ejemplo 15 productos por página
+    paginator = Paginator(productos, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     categorias = Categoria.objects.all().order_by('nombre')
 
     return render(request, 'productos/listar_productos.html', {
-        'productos': productos,
+        'page_obj': page_obj,
         'categorias': categorias,
         'categoria_seleccionada': categoria_id,
         'query': query
     })
-
 
 
 
@@ -321,6 +366,7 @@ def crear_venta(request):
         cliente_form = ClienteVentaForm(request.POST)
         formset = DetalleVentaFormSet(request.POST)
         pago_formset = PagoFormSet(request.POST, prefix='pagos')
+        productos = Producto.objects.filter(activo=True).order_by('nombre')
 
         # Filtrar formularios válidos
         forms_validos = [
@@ -438,11 +484,20 @@ def crear_venta(request):
                     return redirect('resumen_ventas')
 
             except ValueError as e:
-                # ✅ Capturar el error y mostrar mensaje amigable
-                messages.error(request, str(e))
+                    # ✅ Capturar el error y mostrar mensaje amigable
+                    messages.error(request, str(e))
+                    # Devolvemos el mismo template con los formularios y productos actuales
+                    return render(request, 'crear_venta.html', {
+                        'cliente_form': cliente_form, 
+                        'formset': formset, 
+                        'pago_formset': pago_formset,
+                        'productos': productos
+                    })
+
             except Exception as e:
-                # ✅ Cualquier otro error
-                messages.error(request, f'❌ Error al procesar la venta: {e}')
+                    # ✅ Cualquier otro error
+                    messages.error(request, f'❌ Error al procesar la venta: {e}')
+
 
         else:
             if not cliente_form.is_valid():
@@ -959,61 +1014,6 @@ def eliminar_cai(request, pk):
     cai = get_object_or_404(Cai, pk=pk)
     cai.delete()
     return redirect('listar_cai')
-
-
-from django.http import JsonResponse
-from .models import Producto
-
-@login_required
-def buscar_producto(request):
-    """
-    Busca un producto por código de barra, ID, código interno o nombre parcial.
-    """
-    codigo = request.GET.get('codigo', '').strip()
-    
-    if not codigo:
-        return JsonResponse({'encontrado': False, 'error': 'Código vacío'})
-    
-    producto = None
-    
-    try:
-        # 1. Buscar por ID numérico
-        if codigo.isdigit():
-            producto = Producto.objects.filter(id=int(codigo), activo=True).first()
-        
-        # 2. Buscar por código de barra
-        if not producto:
-            producto = Producto.objects.filter(codigo_barra=codigo, activo=True).first()
-        
-        # 3. Buscar por código interno
-        if not producto:
-            producto = Producto.objects.filter(codigo=codigo, activo=True).first()
-        
-        # 4. Buscar por nombre parcial
-        if not producto:
-            producto = Producto.objects.filter(nombre__icontains=codigo, activo=True).first()
-        
-        if producto:
-            return JsonResponse({
-                'encontrado': True,
-            'id': producto.id,
-            'codigo': producto.codigo,
-            'codigo_barra': producto.codigo_barra or '', 
-            'nombre': producto.nombre,
-            'precio': str(producto.precio),
-            'tipo_impuesto': producto.tipo_impuesto
-       })
-        else:
-            return JsonResponse({
-                'encontrado': False,
-                'error': f'Producto "{codigo}" no encontrado'
-            })
-            
-    except Exception as e:
-        return JsonResponse({
-            'encontrado': False,
-            'error': f'Error en búsqueda: {str(e)}'
-        })
 
 
 @login_required

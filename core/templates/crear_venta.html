@@ -83,10 +83,11 @@
               <th>Código</th>
               <th>Codgio barra</th>
               <th>Producto</th>
+              <th>Stock</th>
 
-              <th style="width: 100px;">Cant.</th>
+              <th style="width: 70px;">Cant.</th>
               <th style="width: 120px;">Precio</th>
-              <th style="width: 100px;">Desc. %</th>
+              <th style="width: 80px;">Desc. %</th>
               <th style="width: 100px;">ISV</th>
               <th>Subtotal</th>
 
@@ -305,9 +306,12 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${p.codigo}</td>
           <td>${p.codigo_barra || 'N/A'}</td>
           <td>${p.nombre}</td>
+          <td class="${p.stock == 0 ? 'bg-danger text-white' : p.stock == 1 ? 'bg-warning' : ''}">
+    ${p.stock}
+</td>
 
-          <td>
-            <input type="number" min="1" value="${p.cantidad}"
+           <td>
+           <input type="number" min="1" value="${p.cantidad}"
               class="form-control"
               onchange="actualizarCantidad(${i}, this.value)">
           </td>
@@ -365,6 +369,8 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => {
         if (!data.encontrado) return errorMsg.textContent = "Producto no encontrado";
 
+        console.log(data)
+
         const existe = productos.find(p => p.id === data.id);
         if (existe) existe.cantidad++;
         else productos.push({
@@ -372,6 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
           codigo: data.codigo,
           codigo_barra: data.codigo_barra || '',  // ✅ puede ser null/undefined
           nombre: data.nombre,
+          stock: data.stock,
           cantidad: 1,
           precio_unitario: parseFloat(data.precio),
           descuento: 0,
@@ -456,7 +463,8 @@ function mostrarSugerencias(sugerencias) {  // ← Ahora se llama "sugerencias"
                     codigo: p.codigo,
                     codigo_barra: p.codigo_barra || '',
                     nombre: p.nombre,
-                    cantidad: 1,
+                    stock: p.stock,
+                    cantidad: 1, //linea que faltaba wf
                     precio_unitario: parseFloat(p.precio),
                     descuento: 0,
                     tipo_impuesto: p.tipo_impuesto || 'E'
