@@ -82,11 +82,11 @@
             <tr>
               <th>Código</th>
               <th>Codgio barra</th>
-              <th>Producto</th>
+              <th style="width: 150px;">Producto</th>
               <th>Stock</th>
 
               <th style="width: 70px;">Cant.</th>
-              <th style="width: 120px;">Precio</th>
+              <th style="width: 80px;">Precio</th>
               <th style="width: 80px;">Desc. %</th>
               <th style="width: 100px;">ISV</th>
               <th>Subtotal</th>
@@ -232,6 +232,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let productos = [];
   let pagos = [];
+
+// ✅ RECUPERAR productos si hay mensaje de error
+  const mensajeError = document.querySelector('.alert-danger');
+  if (mensajeError) {
+    const productosGuardados = localStorage.getItem('productos_venta_temp');
+    const pagosGuardados = localStorage.getItem('pagos_venta_temp');
+    
+    if (productosGuardados) {
+      try {
+        productos = JSON.parse(productosGuardados);
+        console.log('✅ Productos recuperados:', productos.length);
+      } catch (e) {
+        console.error('Error al recuperar productos:', e);
+      }
+    }
+    
+    if (pagosGuardados) {
+      try {
+        pagos = JSON.parse(pagosGuardados);
+        console.log('✅ Pagos recuperados:', pagos.length);
+      } catch (e) {
+        console.error('Error al recuperar pagos:', e);
+      }
+    }
+    
+    // Limpiar localStorage después de recuperar
+    localStorage.removeItem('productos_venta_temp');
+    localStorage.removeItem('pagos_venta_temp');
+  }
+
+
 
   const METODOS = [
     { value: "efectivo", label: "Efectivo" },
@@ -583,6 +614,21 @@ document.addEventListener('click', (e) => {
   /* ===================================================================
      INICIALIZACIÓN
   =================================================================== */
+  // ✅ GUARDAR productos antes de enviar el formulario
+  document.getElementById('venta-form').addEventListener('submit', function(e) {
+    const hayProductos = productos.length > 0;
+    
+    if (!hayProductos) {
+      e.preventDefault();
+      alert('⚠️ Debe agregar al menos un producto a la venta.');
+      return false;
+    }
+    
+    // Guardar en localStorage antes de enviar
+    localStorage.setItem('productos_venta_temp', JSON.stringify(productos));
+    localStorage.setItem('pagos_venta_temp', JSON.stringify(pagos));
+  });
+
 
   pagos = [{ metodo: "efectivo", monto: 0 }];
   renderPagos();

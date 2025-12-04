@@ -486,18 +486,12 @@ def crear_venta(request):
             except ValueError as e:
                     # ✅ Capturar el error y mostrar mensaje amigable
                     messages.error(request, str(e))
-                    # Devolvemos el mismo template con los formularios y productos actuales
-                    return render(request, 'crear_venta.html', {
-                        'cliente_form': cliente_form, 
-                        'formset': formset, 
-                        'pago_formset': pago_formset,
-                        'productos': productos
-                    })
+                    # ✅ NO hacer return aquí, dejar que continúe al final
 
             except Exception as e:
                     # ✅ Cualquier otro error
                     messages.error(request, f'❌ Error al procesar la venta: {e}')
-
+                    # ✅ NO hacer return aquí tampoco
 
         else:
             if not cliente_form.is_valid():
@@ -508,10 +502,12 @@ def crear_venta(request):
                 messages.error(request, '❌ Debe agregar al menos un pago válido.')
 
     else:
+        # ✅ Solo crear formsets vacíos si es GET
         cliente_form = ClienteVentaForm()
         formset = DetalleVentaFormSet()
         pago_formset = PagoFormSet(prefix='pagos')
 
+    # ✅ Este return se ejecuta siempre (con o sin error)
     productos = Producto.objects.filter(activo=True).order_by('nombre')
     context = {
         'cliente_form': cliente_form,
