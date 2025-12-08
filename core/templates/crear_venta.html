@@ -9,9 +9,13 @@
     {% endfor %}
   {% endif %}
 
-  <h2 class="mb-3">🧾 Registrar Venta</h2>
+
+
+  
+  <h2 class="mb-3">🧾 Registrar Venta</h2> 
 
   <form method="post" action="{% url 'crear_venta' %}" id="venta-form">
+    
     {% csrf_token %}
     {{ formset.management_form }}
 
@@ -25,6 +29,7 @@
         <button type="button" class="btn btn-primary btn-sm" id="add-by-code-btn" style="height: 45px; margin-left: 5px;">Agregar</button>
     </div>
     <div class="autocomplete-suggestions" id="suggestions-box"></div>
+    
 </div>
         <div id="error-msg" class="text-danger small"></div>
 
@@ -35,6 +40,7 @@
     <button type="button" class="btn btn-success btn-sm" id="btn-nuevo-cliente" title="Agregar nuevo cliente">
       ➕
     </button>
+    
   </div>
   <input type="hidden" name="cliente" id="cliente-id" required>
   <div id="cliente-suggestions" class="autocomplete-suggestions"></div>
@@ -233,16 +239,23 @@ document.addEventListener('DOMContentLoaded', () => {
   let productos = [];
   let pagos = [];
 
-// ✅ RECUPERAR productos si hay mensaje de error
-  const mensajeError = document.querySelector('.alert-danger');
-  if (mensajeError) {
+  // ✅ Solo recuperar si hay mensaje de ERROR (no de éxito)
+  const mensajeError = document.querySelector('.alert-danger, .alert-error');
+  const mensajeExito = document.querySelector('.alert-success');
+
+  // Si hay éxito, limpiar localStorage y NO recuperar nada
+  if (mensajeExito) {
+    localStorage.removeItem('productos_venta_temp');
+    localStorage.removeItem('pagos_venta_temp');
+  } else if (mensajeError) {
+    // Solo recuperar si hay ERROR
     const productosGuardados = localStorage.getItem('productos_venta_temp');
     const pagosGuardados = localStorage.getItem('pagos_venta_temp');
     
     if (productosGuardados) {
       try {
         productos = JSON.parse(productosGuardados);
-        console.log('✅ Productos recuperados:', productos.length);
+        console.log('✅ Productos recuperados por error:', productos.length);
       } catch (e) {
         console.error('Error al recuperar productos:', e);
       }
@@ -251,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pagosGuardados) {
       try {
         pagos = JSON.parse(pagosGuardados);
-        console.log('✅ Pagos recuperados:', pagos.length);
+        console.log('✅ Pagos recuperados por error:', pagos.length);
       } catch (e) {
         console.error('Error al recuperar pagos:', e);
       }
@@ -260,8 +273,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Limpiar localStorage después de recuperar
     localStorage.removeItem('productos_venta_temp');
     localStorage.removeItem('pagos_venta_temp');
+  } else {
+    // ✅ Si NO hay mensaje, limpiar por si acaso
+    localStorage.removeItem('productos_venta_temp');
+    localStorage.removeItem('pagos_venta_temp');
   }
-
 
 
   const METODOS = [
@@ -337,10 +353,9 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${p.codigo}</td>
           <td>${p.codigo_barra || 'N/A'}</td>
           <td>${p.nombre}</td>
-          <td class="${p.stock == 0 ? 'bg-danger text-white' : p.stock == 1 ? 'bg-warning' : ''}">
+          <td class="${p.stock <= 0 ? 'bg-danger text-white' : p.stock <= 5 ? 'bg-warning' : ''}">
     ${p.stock}
-</td>
-
+ </td>
            <td>
            <input type="number" min="1" value="${p.cantidad}"
               class="form-control"
@@ -573,15 +588,26 @@ document.addEventListener('click', (e) => {
   }
 
   window.cambiarMetodo = (i, v) => { pagos[i].metodo = v; validarPagos(); };
+
   window.cambiarMonto = (i, v) => { 
-    pagos[i].monto = safeNum(v); 
-    // ✅ Si cambio un pago que NO es el primero, ajustar el primero automáticamente
-    if (i !== 0) {
-      syncPrimerPagoConTotal();
-    } else {
-      validarPagos();
+  pagos[i].monto = safeNum(v); 
+  
+  // ✅ NO renderizar de nuevo, solo actualizar el primer pago si es necesario
+  if (i !== 0) {
+    const total = safeNum(totalDisplay.textContent);
+    const resto = pagos.slice(1).reduce((a, b) => a + safeNum(b.monto), 0);
+    pagos[0].monto = Math.max(0, total - resto);
+    
+    // ✅ Actualizar SOLO el valor del primer input sin renderizar todo
+    const primerInput = document.querySelector('input[name="pagos-0-monto"]');
+    if (primerInput) {
+      primerInput.value = formatMoney(pagos[0].monto);
     }
-  };
+  }
+  
+  // ✅ Solo validar, sin renderizar
+  validarPagos();
+};
 
   window.eliminarPago = i => {
     if (pagos.length > 1) pagos.splice(i, 1);
