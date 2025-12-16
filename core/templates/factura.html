@@ -5,7 +5,7 @@
 <title>Factura</title>
 
 <style>
-/* ==================== ESTILO LIMPIO GENERAL ==================== */
+/* ==================== ESTILO GENERAL ==================== */
 body {
     font-family: 'Courier New', monospace;
     background: white !important;
@@ -14,26 +14,28 @@ body {
     padding: 0;
 }
 
-/* Contenedor único del ticket */
 #ticket {
     width: 80mm;
     margin: 0 auto;
     padding: 5px;
 }
 
-/* Para A4 */
+/* A4 */
 body.print-a4 #ticket {
     width: 190mm !important;
     padding: 20mm !important;
     border: 1px solid #000;
 }
 
-/* Encabezados */
 .center { text-align: center; }
-.right  { text-align: right; }
-hr { border: none; border-bottom: 1px dashed #000; margin: 6px 0; }
+.right { text-align: right; }
 
-/* Tabla de productos */
+hr {
+    border: none;
+    border-bottom: 1px dashed #000;
+    margin: 6px 0;
+}
+
 .detalle-tabla {
     width: 100%;
     border-collapse: collapse;
@@ -50,25 +52,19 @@ hr { border: none; border-bottom: 1px dashed #000; margin: 6px 0; }
     font-size: 11px;
 }
 
-/* Evitar saltos de página incómodos */
 @media print {
     #botones-impresion { display: none !important; }
     * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
-
-    html, body {
-        margin: 0 !important;
-        padding: 0 !important;
-        background: white !important;
-    }
+    html, body { margin: 0 !important; padding: 0 !important; background: white !important; }
 }
 </style>
-
 </head>
 
 <body>
 
 <div id="ticket">
 
+    <!-- EMPRESA -->
     <div class="center" style="font-weight:bold; font-size:15px;">
         {{ empresa.nombre }}
     </div>
@@ -82,88 +78,120 @@ hr { border: none; border-bottom: 1px dashed #000; margin: 6px 0; }
 
     <hr>
 
+    <!-- FACTURA -->
     <div class="center">
         <strong>FACTURA Nº {{ venta.numero_factura }}</strong>
     </div>
 
     <hr>
 
+    <!-- DATOS FISCALES -->
     <div style="font-size:11px;">
         <strong>CAI:</strong> {{ venta.cai.codigo|default:"SIN CAI" }} <br>
 
         {% if venta.cai %}
-        <strong>Rango:</strong>
-        {{ venta.cai.prefijo }}{{ venta.cai.rango_inicial|stringformat:"08d" }} -
+        <strong>Rango Autorizado:</strong><br>
+        {{ venta.cai.prefijo }}{{ venta.cai.rango_inicial|stringformat:"08d" }}
+        -
         {{ venta.cai.prefijo }}{{ venta.cai.rango_final|stringformat:"08d" }} <br>
 
-        <strong>Fecha límite:</strong> {{ venta.cai.fecha_limite|date:"d/m/Y" }} <br>
+        <strong>Fecha Límite Emisión:</strong>
+        {{ venta.cai.fecha_limite|date:"d/m/Y" }} <br>
         {% endif %}
 
-        <strong>Fecha emisión:</strong> {{ venta.fecha|date:"d/m/Y H:i" }} <br>
-        <strong>Tipo pago:</strong> {{ venta.tipo_pago }}
+        <strong>Fecha Emisión:</strong> {{ venta.fecha|date:"d/m/Y H:i" }} <br>
+        <strong>Tipo de Pago:</strong> {{ venta.tipo_pago|title }}
     </div>
 
     <hr>
 
-    <strong style="font-size:11px;">Formas de pago:</strong>
+    <!-- FORMAS DE PAGO -->
+    <strong style="font-size:11px;">Formas de Pago:</strong>
     {% for p in venta.pagos.all %}
         <div style="font-size:11px;">
-        - {{ p.get_metodo_display }}: L {{ p.monto|floatformat:2 }}
+            - {{ p.get_metodo_display }}: L {{ p.monto|floatformat:2 }}
         </div>
     {% endfor %}
 
     <hr>
 
-    <strong style="font-size:11px;">Cliente:</strong> {{ venta.cliente.nombre }} <br>
-    {% if venta.cliente.rtn %}
-        <strong>RTN:</strong> {{ venta.cliente.rtn }} <br>
-    {% endif %}
+    <!-- CLIENTE -->
+    <div style="font-size:11px;">
+        <strong>Cliente:</strong> {{ venta.cliente.nombre }} <br>
+        {% if venta.cliente.rtn %}
+            <strong>RTN:</strong> {{ venta.cliente.rtn }} <br>
+        {% endif %}
+    </div>
 
     <hr>
 
-    <div class="center" style="font-size:12px; font-weight:bold;">DETALLE DE PRODUCTOS</div>
-
-    {% for item in detalles %}
-    <div style="font-size:12px; font-weight:bold; margin-top:5px;">
-        {{ item.producto.nombre }}
+    <!-- DETALLE PRODUCTOS -->
+    <div class="center" style="font-size:12px; font-weight:bold;">
+        DETALLE DE PRODUCTOS
     </div>
 
-    <table class="detalle-tabla">
-        <tr>
-            <th>Cant</th>
-            <th>Precio</th>
-            <th>Desc</th>
-            <th>ISV</th>
-            <th class="right">Subtotal</th>
-        </tr>
-        <tr>
-            <td>{{ item.cantidad }}</td>
-            <td>L {{ item.precio_unitario|floatformat:2 }}</td>
-            <td>{{ item.descuento|floatformat:1 }}%</td>
-            <td>
-            {% if item.producto.tipo_impuesto == 'G15' %}15%
-            {% elif item.producto.tipo_impuesto == 'G18' %}18%
-            {% else %}Exento{% endif %}
-            </td>
-            <td class="right">L {{ item.total_linea|floatformat:2 }}</td>
-        </tr>
-    </table>
+    {% for item in detalles %}
+        <div style="font-size:12px; font-weight:bold; margin-top:5px;">
+            {{ item.producto.nombre }}
+        </div>
+
+        <table class="detalle-tabla">
+            <tr>
+                <th>Cant</th>
+                <th>Precio</th>
+                <th>Desc</th>
+                <th>ISV</th>
+                <th class="right">Subtotal</th>
+            </tr>
+            <tr>
+                <td>{{ item.cantidad }}</td>
+                <td>L {{ item.precio_unitario|floatformat:2 }}</td>
+                <td>{{ item.descuento|floatformat:1 }}%</td>
+                <td>
+                    {% if item.producto.tipo_impuesto == 'G15' %}15%
+                    {% elif item.producto.tipo_impuesto == 'G18' %}18%
+                    {% else %}Exento{% endif %}
+                </td>
+                <td class="right">L {{ item.total_linea|floatformat:2 }}</td>
+            </tr>
+        </table>
     {% endfor %}
 
     <hr>
 
-    <div class="right" style="font-weight:bold; font-size:14px;">
-        TOTAL: L {{ venta.total|floatformat:2 }}
+    <!-- RESUMEN FISCAL -->
+    <div style="font-size:11px;">
+        <div class="right">Subtotal Exento: L {{ venta.subtotal_exento|floatformat:2 }}</div>
+        <div class="right">Importe Gravado 15%: L {{ venta.subtotal_g15|floatformat:2 }}</div>
+        <div class="right">ISV 15%: L {{ venta.impuesto_15|floatformat:2 }}</div>
+        <div class="right">Importe Gravado 18%: L {{ venta.subtotal_g18|floatformat:2 }}</div>
+        <div class="right">ISV 18%: L {{ venta.impuesto_18|floatformat:2 }}</div>
     </div>
 
     <hr>
 
+<br>
+
+    <!-- TOTAL -->
+    <div class="right" style="font-weight:bold; font-size:14px;">
+        TOTAL FACTURA: L {{ venta.total|floatformat:2 }}
+    </div>
+
+    <br>
+
+    <hr>
+
+    
+   
+
+    <!-- TOTAL EN LETRAS -->
     <div style="font-size:11px;">
         <strong>SON:</strong> {{ total_letras }}
     </div>
 
     <br><br>
 
+    <!-- FIRMA -->
     <div class="center" style="font-size:10px;">
         ____________________________ <br>
         FIRMA DEL CLIENTE
@@ -174,24 +202,23 @@ hr { border: none; border-bottom: 1px dashed #000; margin: 6px 0; }
 <!-- BOTONES -->
 <div id="botones-impresion" style="text-align:center; margin-top:20px; display:flex; gap:10px; justify-content:center;">
     
-    <a href="{% url 'resumen_ventas' %}" 
-       class="btn btn-secondary" 
+    <a href="{% url 'resumen_ventas' %}"
+       class="btn btn-secondary"
        style="padding:10px 18px; font-size:15px; text-decoration:none;">
         ← Volver a Ventas
     </a>
 
-    <button onclick="imprimirTermica()" 
-            class="btn btn-primary" 
+    <button onclick="imprimirTermica()"
+            class="btn btn-primary"
             style="padding:10px 18px; font-size:15px;">
         🖨️ Térmica
     </button>
 
-    <button onclick="imprimirA4()" 
-            class="btn btn-success" 
+    <button onclick="imprimirA4()"
+            class="btn btn-success"
             style="padding:10px 18px; font-size:15px;">
         📄 A4
     </button>
-
 </div>
 
 <script>
@@ -199,7 +226,6 @@ function imprimirTermica() {
     document.body.classList.remove('print-a4');
     window.print();
 }
-
 function imprimirA4() {
     document.body.classList.add('print-a4');
     window.print();
@@ -208,6 +234,7 @@ function imprimirA4() {
 
 </body>
 </html>
+
 
 
 
