@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+{% block title %}Resumen de Cuentas{% endblock %}
+{% block content %}
+
+
+
+
+<form method="get" class="row g-2 mb-4">
+
+  <div class="col-md-2">
+    <label class="form-label">Desde</label>
+    <input type="date" name="desde" value="{{ f.desde }}" class="form-control">
+  </div>
+
+  <div class="col-md-2">
+    <label class="form-label">Hasta</label>
+    <input type="date" name="hasta" value="{{ f.hasta }}" class="form-control">
+  </div>
+
+  <div class="col-md-2">
+    <label class="form-label">Estado</label>
+    <select name="estado" class="form-select">
+      <option value="" {% if not f.estado %}selected{% endif %}>Todos</option>
+      <option value="pendiente" {% if f.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+      <option value="pagado" {% if f.estado == 'pagado' %}selected{% endif %}>Pagado</option>
+    </select>
+  </div>
+
+  <!-- ✅ Cliente (autocomplete) -->
+  <div class="col-md-3 position-relative">
+    <label class="form-label">Cliente</label>
+    <input type="text" id="cliente-input" name="cliente_nombre" value="{{ f.cliente_nombre }}"
+           class="form-control" placeholder="Escribí el cliente...">
+    <input type="hidden" id="cliente-id" name="cliente_id" value="{{ f.cliente_id }}">
+    <div id="cliente-suggestions" class="autocomplete-suggestions"></div>
+  </div>
+
+  <!-- ✅ Proveedor (autocomplete) -->
+  <div class="col-md-3 position-relative">
+    <label class="form-label">Proveedor</label>
+    <input type="text" id="proveedor-input" name="proveedor_nombre" value="{{ f.proveedor_nombre }}"
+           class="form-control" placeholder="Escribí el proveedor...">
+    <input type="hidden" id="proveedor-id" name="proveedor_id" value="{{ f.proveedor_id }}">
+    <div id="proveedor-suggestions" class="autocomplete-suggestions"></div>
+  </div>
+
+  <div class="col-md-2 d-flex align-items-end gap-2">
+    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+    <a href="{% url 'cuentas:resumen_cuentas' %}" class="btn btn-secondary w-100">Limpiar</a>
+  </div>
+
+</form>
+
+</form>
+
+<h2>Cuentas por Cobrar</h2>
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Cliente</th>
+      <th>Monto Original</th>
+      <th>Monto Pagado</th>
+      <th>Saldo Restante</th>
+      <th>Fecha Venta</th>
+      <th>Vence</th>
+      <th>Estado</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for cuenta in por_cobrar %}
+    <tr>
+      <td>{{ cuenta.cliente.nombre }}</td>
+      <td>L {{ cuenta.monto_pendiente|floatformat:2 }}</td>
+      <td>L {{ cuenta.monto_pagado|floatformat:2 }}</td>
+      <td>
+        <strong>L {{ cuenta.saldo_restante|floatformat:2 }}</strong>
+      </td>
+      <td>{{ cuenta.venta.fecha|date:"M d, Y" }}</td>
+      <td>{{ cuenta.fecha_vencimiento|date:"M d, Y" }}</td>
+      <td>
+        {% if cuenta.estado == 'pendiente' %}
+          <span class="badge bg-warning text-dark">Pendiente</span>
+        {% else %}
+          <span class="badge bg-success">Pagado</span>
+        {% endif %}
+      </td>
+      <td>
+        <a href="{% url 'ventas:factura' cuenta.venta.id %}" class="btn btn-sm btn-outline-primary">Ver Factura</a>
+        {% if cuenta.estado == 'pendiente' %}
+        <a href="{% url 'cuentas:registrar_pago_cliente' cuenta.id %}" class="btn btn-sm btn-success">Registrar Pago</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="7">No hay cuentas por cobrar.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Cuentas por Pagar</h2>
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Proveedor</th>
+      <th>Monto Original</th>
+      <th>Monto Pagado</th>
+      <th>Saldo Restante</th>
+      <th>Fecha Compra</th>
+      <th>Vence</th>
+      <th>Estado</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for cuenta in por_pagar %}
+    <tr>
+      <td>{{ cuenta.proveedor.nombre }}</td>
+      <td>L {{ cuenta.monto_pendiente|floatformat:2 }}</td>
+      <td>L {{ cuenta.monto_pagado|floatformat:2 }}</td>
+      <td>
+        <strong>L {{ cuenta.saldo_restante|floatformat:2 }}</strong>
+      </td>
+      <td>{{ cuenta.compra.fecha|date:"M d, Y" }}</td>
+      <td>{{ cuenta.fecha_vencimiento|date:"M d, Y" }}</td>
+      <td>
+        {% if cuenta.estado == 'pendiente' %}
+          <span class="badge bg-warning text-dark">Pendiente</span>
+        {% else %}
+          <span class="badge bg-success">Pagado</span>
+        {% endif %}
+      </td>
+      <td>
+        <a href="{% url 'compras:resumen_compra' cuenta.compra.id %}" class="btn btn-sm btn-outline-success">Ver Resumen</a>
+        {% if cuenta.estado == 'pendiente' %}
+        <a href="{% url 'cuentas:registrar_pago_proveedor' cuenta.id %}" class="btn btn-sm btn-success">Registrar Pago</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="7">No hay cuentas por pagar.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  // ===== CLIENTES =====
+  const clienteInput = document.getElementById('cliente-input');
+  const clienteSuggestions = document.getElementById('cliente-suggestions');
+  const clienteIdInput = document.getElementById('cliente-id');
+  let timeoutCliente = null;
+
+  if (clienteInput && clienteSuggestions && clienteIdInput) {
+    clienteInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim();
+      clearTimeout(timeoutCliente);
+      clienteIdInput.value = "";
+
+      if (query.length < 2) {
+        clienteSuggestions.classList.remove('show');
+        clienteSuggestions.innerHTML = '';
+        return;
+      }
+
+      timeoutCliente = setTimeout(() => {
+        fetch(`{% url 'sugerencias_clientes' %}?q=${encodeURIComponent(query)}`)
+          .then(r => r.json())
+          .then(data => {
+            const clientes = data.clientes || [];
+            clienteSuggestions.innerHTML = '';
+            if (!clientes.length) {
+              clienteSuggestions.classList.remove('show');
+              return;
+            }
+
+            clientes.forEach(c => {
+              const item = document.createElement('div');
+              item.className = 'autocomplete-item';
+              item.innerHTML = `<strong>${c.nombre}</strong>
+                <small>${c.rtn ? `RTN: ${c.rtn}` : ''} ${c.telefono ? `| Tel: ${c.telefono}` : ''}</small>`;
+              item.addEventListener('click', () => {
+                clienteInput.value = c.nombre;
+                clienteIdInput.value = c.id;
+                clienteSuggestions.classList.remove('show');
+              });
+              clienteSuggestions.appendChild(item);
+            });
+
+            clienteSuggestions.classList.add('show');
+          });
+      }, 300);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!clienteInput.contains(e.target) && !clienteSuggestions.contains(e.target)) {
+        clienteSuggestions.classList.remove('show');
+      }
+    });
+  }
+
+  // ===== PROVEEDORES =====
+  const proveedorInput = document.getElementById('proveedor-input');
+  const proveedorSuggestions = document.getElementById('proveedor-suggestions');
+  const proveedorIdInput = document.getElementById('proveedor-id');
+  let timeoutProveedor = null;
+
+  if (proveedorInput && proveedorSuggestions && proveedorIdInput) {
+    proveedorInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim();
+      clearTimeout(timeoutProveedor);
+      proveedorIdInput.value = "";
+
+      if (query.length < 2) {
+        proveedorSuggestions.classList.remove('show');
+        proveedorSuggestions.innerHTML = '';
+        return;
+      }
+
+      timeoutProveedor = setTimeout(() => {
+        fetch(`{% url 'sugerencias_proveedores' %}?q=${encodeURIComponent(query)}`)
+          .then(r => r.json())
+          .then(data => {
+            const proveedores = data.proveedores || [];
+            proveedorSuggestions.innerHTML = '';
+            if (!proveedores.length) {
+              proveedorSuggestions.classList.remove('show');
+              return;
+            }
+
+            proveedores.forEach(p => {
+              const item = document.createElement('div');
+              item.className = 'autocomplete-item';
+              item.innerHTML = `<strong>${p.nombre}</strong>
+                ${p.rtn ? `<small class="text-muted">RTN: ${p.rtn}</small>` : ''}`;
+              item.addEventListener('click', () => {
+                proveedorInput.value = p.nombre;
+                proveedorIdInput.value = p.id;
+                proveedorSuggestions.classList.remove('show');
+              });
+              proveedorSuggestions.appendChild(item);
+            });
+
+            proveedorSuggestions.classList.add('show');
+          });
+      }, 300);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!proveedorInput.contains(e.target) && !proveedorSuggestions.contains(e.target)) {
+        proveedorSuggestions.classList.remove('show');
+      }
+    });
+  }
+
+});
+</script>
+
+
+{% endblock %}

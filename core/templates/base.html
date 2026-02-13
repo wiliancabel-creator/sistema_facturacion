@@ -36,34 +36,47 @@
         <ul class="navbar-nav me-auto">
 
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'listar_productos' %}">📦 Productos</a>
+            <a class="nav-link" href="{% url 'productos:listar_productos' %}">📦 Productos</a>
           </li>
 
+
           <li class="nav-item">
-            {% if perms.core.add_venta %}
-              <a class="nav-link" href="{% url 'crear_venta' %}">🛒 Nueva Venta</a>
+            {% if modulos.mod_ventas and perms.ventas.add_venta %}
+              <a class="nav-link" href="{% url 'ventas:crear_venta' %}">🛒 Nueva Venta</a>
             {% endif %}
           </li>
 
           <li class="nav-item">
-            {% if perms.core.view_cotizacion %}
-              <a class="nav-link" href="{% url 'lista_cotizaciones' %}">📋 Cotizaciones</a>
+            {% if modulos.mod_cotizaciones and perms.cotizaciones.view_cotizacion %}
+              <a class="nav-link" href="{% url 'cotizaciones:lista_cotizaciones' %}">📋 Cotizaciones</a>
             {% endif %}
           </li>
 
           <li class="nav-item">
-            {% if perms.core.view_empleado %}
-              <a class="nav-link" href="{% url 'lista_empleados' %}">👷 Empleados</a>
+            {% if modulos.mod_empleados and perms.empleados.view_empleado %}
+              <a class="nav-link" href="{% url 'empleados:lista_empleados' %}">👷 Empleados</a>
             {% endif %}
           </li>
 
-          <!-- ❌ ELIMINADO: CONFIGURACIÓN AQUÍ
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'configuracion_empresa' %}">
-              CONFIGURACION DE EMPRESA
-            </a>
+          {% comment %} <li class="nav-item">
+            {% if modulos.mod_reportes and perms.reportes.view_reporte %}
+              <a class="nav-link" href="{% url 'reportes:menu_reportes' %}">📊 Reportes</a>
+            {% endif %}
+          </li> {% endcomment %}
+
+        <li class="nav-item">
+            {% if modulos.mod_caja and perms.caja.add_cajasesion %}
+              <a class="nav-link" href="{% url 'caja:abrir_caja' %}">🧾 Caja</a>
+            {% endif %}
           </li>
-          -->
+
+          <li class="nav-item">
+            {% if modulos.mod_caja and perms.caja.view_cajasesion %}
+            <a class="nav-link" href="{% url 'caja:historial_cajas' %}">📚 Cierres</a>
+            {% endif %}
+          </li>
+
+
         </ul>
 
         <!-- DERECHA -->
@@ -71,15 +84,15 @@
 
           <!-- Botón Cambiar Tema -->
           <li class="nav-item me-2">
-            <button id="themeToggle" class="btn btn-outline-light btn-sm">
+            <button id="themeToggle" class="btn btn-outline-light btn-sm" type="button">
               <i class="bi bi-brightness-high-fill" id="themeIcon"></i>
             </button>
           </li>
 
-          <!-- Botón Configuración de Empresa (nuevo) -->
-          {% if perms.core.view_empleado %}
+          <!-- Botón Configuración de Empresa -->
+          {% if perms.configuracion.view_empresa %}
           <li class="nav-item me-2">
-            <a href="{% url 'configuracion_empresa' %}"
+            <a href="{% url 'configuracion:configuracion_empresa' %}"
                class="btn btn-warning btn-sm fw-bold text-dark">
               🏢 Configuración
             </a>
@@ -89,7 +102,7 @@
           <!-- Botón Cerrar Sesión -->
           {% if user.is_authenticated %}
           <li class="nav-item">
-            <form action="{% url 'logout' %}" method="post">
+            <form action="{% url 'logout' %}" method="post" class="mb-0">
               {% csrf_token %}
               <button type="submit" class="btn btn-danger btn-sm">
                 🔓 Cerrar sesión
@@ -109,6 +122,12 @@
     {% block content %}
     {% endblock %}
   </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
 
 
   <!-- Script de cambio de tema -->

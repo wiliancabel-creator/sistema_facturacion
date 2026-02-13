@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% block title %}Lista de Cotizaciones{% endblock %}
+{% block content %}
+
+<div class="contenedor">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>📑 Cotizaciones</h2>
+    <a href="{% url 'cotizaciones:crear_cotizacion' %}" class="btn btn-primary">➕ Nueva Cotización</a>
+  </div>
+
+  <!-- ✅ FILTROS -->
+  <form method="get" class="card card-body mb-3">
+    <div class="row g-2 align-items-end">
+
+      <div class="col-md-2">
+        <label class="form-label">Desde</label>
+        <input type="date" name="desde" value="{{ f.desde }}" class="form-control">
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Hasta</label>
+        <input type="date" name="hasta" value="{{ f.hasta }}" class="form-control">
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Cliente</label>
+        <input type="text" name="cliente_nombre" id="cliente-input" value="{{ f.cliente_nombre }}"
+               class="form-control" placeholder="Buscar cliente..." autocomplete="off">
+        <input type="hidden" name="cliente_id" id="cliente-id" value="{{ f.cliente_id }}">
+        <div id="cliente-suggestions" class="autocomplete-suggestions"></div>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Estado</label>
+        <select name="estado" class="form-control">
+          <option value="">-- Todos --</option>
+          <option value="pendiente" {% if f.estado == "pendiente" %}selected{% endif %}>Pendiente</option>
+          <option value="facturada" {% if f.estado == "facturada" %}selected{% endif %}>Facturada</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Tipo pago</label>
+        <select name="tipo_pago" class="form-control">
+          <option value="">-- Todos --</option>
+          <option value="contado" {% if f.tipo_pago == "contado" %}selected{% endif %}>Contado</option>
+          <option value="credito" {% if f.tipo_pago == "credito" %}selected{% endif %}>Crédito</option>
+        </select>
+      </div>
+
+      <div class="col-md-1 d-grid">
+        <button class="btn btn-dark">Filtrar</button>
+      </div>
+
+    </div>
+
+    {% if f.desde or f.hasta or f.cliente_id or f.estado or f.tipo_pago %}
+      <div class="mt-2">
+        <a href="{% url 'cotizaciones:lista_cotizaciones' %}" class="btn btn-outline-secondary btn-sm">Limpiar filtros</a>
+      </div>
+    {% endif %}
+  </form>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Cliente</th>
+        <th>Fecha</th>
+        <th>Total</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in cotizaciones %}
+        <tr>
+          <td>{{ c.id }}</td>
+          <td>{{ c.cliente.nombre }}</td>
+          <td>{{ c.fecha|date:"d/m/Y H:i" }}</td>
+          <td>L {{ c.total }}</td>
+          <td>{{ c.estado }}</td>
+
+          <td>
+            <a href="{% url 'cotizaciones:detalle_cotizacion' c.id %}" class="btn btn-info btn-sm">📄 Ver</a>
+
+            {% if c.estado == "pendiente" %}
+              <a href="{% url 'cotizaciones:editar_cotizacion' c.id %}" class="btn btn-warning btn-sm">✏️ Editar</a>
+              <a href="{% url 'cotizaciones:facturar_cotizacion' c.id %}" class="btn btn-success btn-sm">💰 Facturar</a>
+
+              {% if perms.cotizaciones.delete_cotizacion %}
+                <a href="{% url 'cotizaciones:eliminar_cotizacion' c.id %}" class="btn btn-danger btn-sm"
+                   onclick="return confirm('⚠️ ¿Seguro que deseas eliminar esta cotización?');">🗑️ Eliminar</a>
+              {% endif %}
+            {% else %}
+              <span class="badge bg-success">✅ Facturada</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" class="text-center">No hay cotizaciones registradas.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const clienteInput = document.getElementById('cliente-input');
+  const clienteId = document.getElementById('cliente-id');
+  const box = document.getElementById('cliente-suggestions');
+  let t = null;
+
+  if (!clienteInput) return;
+
+  clienteInput.addEventListener('input', (e) => {
+    const q = e.target.value.trim();
+    clearTimeout(t);
+
+    if (q.length < 2) {
+      box.classList.remove('show');
+      return;
+    }
+
+    t = setTimeout(() => {
+      fetch(`/sugerencias-clientes/?q=${encodeURIComponent(q)}`)
+        .then(r => r.json())
+        .then(data => {
+          box.innerHTML = '';
+          if (!data.clientes || data.clientes.length === 0) {
+            box.classList.remove('show');
+            return;
+          }
+
+          data.clientes.forEach(c => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            item.innerHTML = `<strong>${c.nombre}</strong> <small>${c.rtn ? 'RTN: '+c.rtn : ''}</small>`;
+            item.addEventListener('click', () => {
+              clienteInput.value = c.nombre;
+              clienteId.value = c.id;
+              box.classList.remove('show');
+            });
+            box.appendChild(item);
+          });
+
+          box.classList.add('show');
+        });
+    }, 250);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!clienteInput.contains(e.target) && !box.contains(e.target)) {
+      box.classList.remove('show');
+    }
+  });
+});
+</script>
+
+{% endblock %}
+
+

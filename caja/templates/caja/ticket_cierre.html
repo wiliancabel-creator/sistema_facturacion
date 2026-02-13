@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Cierre de Caja</title>
+<style>
+  body {
+    font-family: 'Courier New', monospace;
+    background: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
+  }
+  #ticket {
+    width: 80mm;
+    margin: 0 auto;
+    padding: 6px;
+  }
+  .center { text-align:center; }
+  .right { text-align:right; }
+  hr {
+    border: none;
+    border-bottom: 1px dashed #000;
+    margin: 6px 0;
+  }
+  .row {
+    display:flex;
+    justify-content:space-between;
+    gap: 8px;
+  }
+  .small { font-size: 12px; }
+  @media print {
+    @page { margin: 0; }
+    body { margin: 0; }
+    #ticket { width: 80mm; }
+  }
+</style>
+</head>
+<body onload="window.print()">
+<div id="ticket">
+
+  <div class="center">
+    <div><strong>{{ empresa.nombre }}</strong></div>
+    {% if empresa.rtn %}<div class="small">RTN: {{ empresa.rtn }}</div>{% endif %}
+    {% if empresa.direccion %}<div class="small">{{ empresa.direccion }}</div>{% endif %}
+  </div>
+
+  <hr>
+
+  <div class="center"><strong>CIERRE DE CAJA</strong></div>
+  <div class="small">
+    <div><strong>Caja:</strong> {{ sesion.caja.nombre }}</div>
+    <div><strong>Cajero:</strong> {{ sesion.cajero }}</div>
+    <div><strong>Apertura:</strong> {{ sesion.fecha_apertura|date:"Y-m-d H:i" }}</div>
+    <div><strong>Cierre:</strong> {{ sesion.fecha_cierre|date:"Y-m-d H:i" }}</div>
+  </div>
+
+  <hr>
+
+  <div class="row"><span>Apertura</span><span>L {{ sesion.monto_apertura }}</span></div>
+
+  <hr>
+
+  <div><strong>Pagos (Sistema)</strong></div>
+  <div class="row"><span>Efectivo</span><span>L {{ sesion.total_efectivo }}</span></div>
+  <div class="row"><span>Tarjeta</span><span>L {{ sesion.total_tarjeta }}</span></div>
+  <div class="row"><span>Transferencia</span><span>L {{ sesion.total_transferencia }}</span></div>
+
+  <hr>
+
+  <div><strong>Movimientos</strong></div>
+  <div class="row"><span>Ingresos</span><span>L {{ sesion.ingresos_efectivo }}</span></div>
+  <div class="row"><span>Egresos</span><span>L {{ sesion.egresos_efectivo }}</span></div>
+
+  <hr>
+
+  <div class="row"><span>Efectivo teórico</span><span>L {{ sesion.efectivo_teorico }}</span></div>
+  <div class="row"><span>Efectivo contado</span><span>L {{ sesion.efectivo_contado }}</span></div>
+
+  <hr>
+
+  <div class="row"><strong>Diferencia</strong><strong>L {{ sesion.diferencia }}</strong></div>
+
+  {% if sesion.observacion %}
+    <hr>
+    <div class="small"><strong>Obs:</strong> {{ sesion.observacion }}</div>
+  {% endif %}
+
+  <hr>
+  <div class="center small">*** FIN DEL CIERRE ***</div>
+
+</div>
+</body>
+</html>

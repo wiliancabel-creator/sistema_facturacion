@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% block title %}Detalle Cotización{% endblock %}
+
+{% block content %}
+<style>
+.recibo {
+  max-width: 340px;
+  margin: auto;
+  font-family: monospace;
+  font-size: 13px;
+  background: #fff;
+  color: #000;
+  padding: 12px;
+  border: 1px dashed #999;
+}
+
+.recibo h3, .recibo h4, .recibo p {
+  text-align: center;
+  margin: 4px 0;
+}
+
+.recibo table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.recibo th, .recibo td {
+  border-bottom: 1px dashed #999;
+  padding: 4px;
+  font-size: 12px;
+}
+
+.total-line {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+}
+
+.firma {
+  margin-top: 25px;
+  text-align: center;
+}
+
+@media print {
+  .btn-imprimir,
+  .btn-facturar {
+    display: none;
+  }
+}
+</style>
+
+<div class="recibo">
+
+  <!-- ================= EMPRESA ================= -->
+  <h3>{{ empresa.nombre|upper }}</h3>
+
+  {% if empresa.rtn %}
+    <p>RTN: {{ empresa.rtn }}</p>
+  {% endif %}
+
+  {% if empresa.direccion %}
+    <p>📍 {{ empresa.direccion }}</p>
+  {% endif %}
+
+  {% if empresa.telefono %}
+    <p>☎️ {{ empresa.telefono }}</p>
+  {% endif %}
+
+  {% if empresa.correo %}
+    <p>📧 {{ empresa.correo }}</p>
+  {% endif %}
+
+  <hr>
+
+  <!-- ================= COTIZACIÓN ================= -->
+  <h4>📝 COTIZACIÓN N°. {{ cotizacion.id|stringformat:"05d" }}</h4>
+  <p>Fecha: {{ cotizacion.fecha|date:"d/m/Y H:i" }}</p>
+
+  <hr>
+
+  <!-- ================= CLIENTE ================= -->
+  {% if cotizacion.cliente %}
+    <p><strong>Cliente:</strong> {{ cotizacion.cliente.nombre }}</p>
+
+    {% if cotizacion.cliente.rtn %}
+      <p>RTN: {{ cotizacion.cliente.rtn }}</p>
+    {% endif %}
+
+    {% if cotizacion.cliente.telefono %}
+      <p>📞 {{ cotizacion.cliente.telefono }}</p>
+    {% endif %}
+  {% endif %}
+
+  <hr>
+
+  <!-- ================= DETALLES ================= -->
+  <table>
+    <thead>
+      <tr>
+        <th>Prod</th>
+        <th>C</th>
+        <th>P</th>
+        <th>ISV</th>
+        <th>T</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in cotizacion.detalles.all %}
+        <tr>
+          <td>{{ item.producto.nombre|truncatechars:12 }}</td>
+          <td>{{ item.cantidad }}</td>
+          <td>{{ item.precio_unitario }}</td>
+          <td>
+            {% if item.producto.tipo_impuesto == "G15" %}
+              15%
+            {% elif item.producto.tipo_impuesto == "G18" %}
+              18%
+            {% else %}
+              Ex
+            {% endif %}
+          </td>
+          <td>{{ item.total_linea }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <hr>
+
+  <!-- ================= RESUMEN FISCAL ================= -->
+  <div class="total-line">
+    <span>Exento:</span>
+    <span>L {{ cotizacion.subtotal_exento }}</span>
+  </div>
+
+  <div class="total-line">
+    <span>Grav. 15%:</span>
+    <span>L {{ cotizacion.subtotal_g15 }}</span>
+  </div>
+
+  <div class="total-line">
+    <span>ISV 15%:</span>
+    <span>L {{ cotizacion.impuesto_15 }}</span>
+  </div>
+
+  <div class="total-line">
+    <span>Grav. 18%:</span>
+    <span>L {{ cotizacion.subtotal_g18 }}</span>
+  </div>
+
+  <div class="total-line">
+    <span>ISV 18%:</span>
+    <span>L {{ cotizacion.impuesto_18 }}</span>
+  </div>
+
+  <hr>
+
+  <div class="total-line" style="font-size:15px;">
+    <span>TOTAL:</span>
+    <span>L {{ cotizacion.total }}</span>
+  </div>
+
+  <hr>
+
+  <p><strong>Tipo pago:</strong> {{ cotizacion.tipo_pago|title }}</p>
+
+  <p>
+    <strong>Estado:</strong>
+    {% if cotizacion.estado == "pendiente" %}
+      ⏳ Pendiente
+    {% else %}
+      ✅ Facturada
+    {% endif %}
+  </p>
+
+  <p style="font-size:11px; text-align:center;">
+    Esta cotización tiene validez de 7 días.
+  </p>
+
+  <div class="firma">
+    <p>__________________________</p>
+    <p>Firma del cliente</p>
+  </div>
+
+  <div class="text-center mt-3">
+    <button onclick="window.print()" class="btn btn-sm btn-primary btn-imprimir">
+      🖨️ Imprimir
+    </button>
+
+    {% if cotizacion.estado == "pendiente" %}
+      <a href="{% url 'cotizaciones:facturar_cotizacion' cotizacion.id %}"
+         class="btn btn-sm btn-success btn-facturar">
+        💰 Facturar
+      </a>
+    {% else %}
+      <p style="color: green; font-weight: bold;">✅ Ya fue facturada</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+
+
+

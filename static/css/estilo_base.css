@@ -1207,5 +1207,52 @@ input, select, textarea {
 }
 
 
+.autocomplete-suggestions{
+  position:absolute; top:100%; left:0; right:0;
+  background:#fff; border:1px solid #ddd; border-radius:8px;
+  max-height:240px; overflow-y:auto; display:none; z-index:9999;
+}
+.autocomplete-suggestions.show{ display:block; }
+.autocomplete-item{ padding:10px 12px; cursor:pointer; border-bottom:1px solid #eee; }
+.autocomplete-item:hover{ background:#f2f2f2; }
+
+
+
+.autocomplete-suggestions{
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  display: none;          /* 👈 oculto por defecto */
+  z-index: 9999;
+}
+
+.autocomplete-suggestions.show{
+  display: block;         /* ✅ esto faltaba */
+}
+
+.autocomplete-item{
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.autocomplete-item:hover{
+  background: #f2f2f2;
+}
+
+/* Para que el dropdown se posicione bien */
+.autocomplete-container{
+  position: relative;
+}
+
+
+
+
 
 

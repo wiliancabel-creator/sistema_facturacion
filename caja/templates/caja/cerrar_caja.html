@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-3" style="max-width:680px;">
+  <h4>🧾 Cierre de Caja</h4>
+  <div class="text-muted mb-2">
+    <strong>Caja:</strong> {{ sesion.caja.nombre }} |
+    <strong>Cajero:</strong> {{ sesion.cajero }} |
+    <strong>Apertura:</strong> {{ sesion.fecha_apertura|date:"Y-m-d H:i" }}
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h6>Totales del sistema</h6>
+      <div class="d-flex justify-content-between"><span>Efectivo</span><strong>L {{ tot_pagos.efectivo|default:"0.00" }}</strong></div>
+      <div class="d-flex justify-content-between"><span>Tarjeta</span><strong>L {{ tot_pagos.tarjeta|default:"0.00" }}</strong></div>
+      <div class="d-flex justify-content-between"><span>Transferencia</span><strong>L {{ tot_pagos.transferencia|default:"0.00" }}</strong></div>
+
+      <hr>
+      <div class="d-flex justify-content-between"><span>Ingresos manuales</span><strong>L {{ ingresos }}</strong></div>
+      <div class="d-flex justify-content-between"><span>Egresos manuales</span><strong>L {{ egresos }}</strong></div>
+
+      <hr>
+      <div class="d-flex justify-content-between"><span>Monto apertura</span><strong>L {{ sesion.monto_apertura }}</strong></div>
+      <div class="d-flex justify-content-between"><span>Efectivo teórico</span><strong>L {{ efectivo_teorico }}</strong></div>
+
+      <hr>
+      <form method="post">
+        {% csrf_token %}
+        <label class="form-label mt-2">Efectivo contado (físico)</label>
+        <input type="number" step="0.01" name="efectivo_contado" class="form-control" required>
+
+        <label class="form-label mt-2">Observación (obligatoria si hay diferencia)</label>
+        <textarea name="observacion" class="form-control" rows="3" placeholder="Ej: faltante por cambio, sobrante por..."></textarea>
+
+        <button class="btn btn-danger mt-3 w-100">Cerrar Caja</button>
+        <a class="btn btn-secondary mt-2 w-100" href="{% url 'caja:panel_caja' sesion.id %}">Volver</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

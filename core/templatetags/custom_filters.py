@@ -1,5 +1,5 @@
 from django import template
-from core.models import Producto  # ✅ tus modelos están en core.models
+from productos.models import Producto  # ✅ tus modelos están en core.models
 
 register = template.Library()
 

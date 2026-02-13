@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Crear CAI{% endblock %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2>➕ Crear CAI</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-success">💾 Guardar</button>
+        <a href="{% url 'cai:listar_cai' %}" class="btn btn-secondary">↩ Volver</a>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-3">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4>✅ Detalle Cierre de Caja</h4>
+      <div class="text-muted">
+        <strong>Caja:</strong> {{ sesion.caja.nombre }} |
+        <strong>Cajero:</strong> {{ sesion.cajero }} |
+        <strong>Apertura:</strong> {{ sesion.fecha_apertura|date:"Y-m-d H:i" }} |
+        <strong>Cierre:</strong> {{ sesion.fecha_cierre|date:"Y-m-d H:i" }}
+      </div>
+    </div>
+    <div>
+      <a class="btn btn-outline-dark" href="{% url 'caja:ticket_cierre' sesion.id %}" target="_blank">🖨️ Imprimir Ticket</a>
+    </div>
+  </div>
+
+  <div class="row mt-3">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h6>Resumen</h6>
+          <div class="d-flex justify-content-between"><span>Monto apertura</span><strong>L {{ sesion.monto_apertura }}</strong></div>
+          <div class="d-flex justify-content-between"><span>Efectivo (pagos)</span><strong>L {{ sesion.total_efectivo }}</strong></div>
+          <div class="d-flex justify-content-between"><span>Tarjeta</span><strong>L {{ sesion.total_tarjeta }}</strong></div>
+          <div class="d-flex justify-content-between"><span>Transferencia</span><strong>L {{ sesion.total_transferencia }}</strong></div>
+
+          <hr>
+          <div class="d-flex justify-content-between"><span>Ingresos manuales</span><strong>L {{ sesion.ingresos_efectivo }}</strong></div>
+          <div class="d-flex justify-content-between"><span>Egresos manuales</span><strong>L {{ sesion.egresos_efectivo }}</strong></div>
+
+          <hr>
+          <div class="d-flex justify-content-between"><span>Efectivo teórico</span><strong>L {{ sesion.efectivo_teorico }}</strong></div>
+          <div class="d-flex justify-content-between"><span>Efectivo contado</span><strong>L {{ sesion.efectivo_contado }}</strong></div>
+
+          <hr>
+          <div class="d-flex justify-content-between">
+            <span>Diferencia</span>
+            <strong>L {{ sesion.diferencia }}</strong>
+          </div>
+
+          {% if sesion.observacion %}
+          <hr>
+          <div>
+            <strong>Observación:</strong>
+            <div class="text-muted">{{ sesion.observacion }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 mt-3 mt-md-0">
+      <div class="card">
+        <div class="card-body">
+          <h6>Movimientos</h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-striped">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Concepto</th>
+                  <th class="text-end">Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+              {% for m in sesion.movimientos.all %}
+                <tr>
+                  <td>{{ m.fecha|date:"Y-m-d H:i" }}</td>
+                  <td>{{ m.get_tipo_display }}</td>
+                  <td>{{ m.concepto }}</td>
+                  <td class="text-end">L {{ m.monto }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-center text-muted">Sin movimientos</td></tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

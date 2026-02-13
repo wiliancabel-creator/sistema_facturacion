@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="contenedor dashboard-container">
+
+  <!-- 🔢 TARJETAS DE ESTADÍSTICAS -->
+  <div class="dashboard-cards">
+    {% if perms.ventas.add_venta %}
+      <div class="dashboard-card card-ventas">
+        <h4>Ventas Hoy</h4>
+        <p>L {{ ventas_hoy }}</p>
+      </div>
+
+      <div class="dashboard-card card-compras">
+        <h4>Compras Hoy</h4>
+        <p>L {{ compras_hoy }}</p>
+      </div>
+
+      <div class="dashboard-card card-productos">
+        <h4>Productos Vendidos Hoy</h4>
+        <p>{{ productos_vendidos_hoy }}</p>
+      </div>
+
+      <div class="dashboard-card card-productos-compra">
+        <h4>Productos Comprados Hoy</h4>
+        <p>{{ productos_comprados_hoy }}</p>
+      </div>
+    {% endif %}
+
+    {% if perms.ventas.add_venta %}
+      {% if perms.cai.delete_cai %}
+        <div class="dashboard-card card-simple">
+          <h4>Total Ventas</h4>
+          <p>L {{ total_ventas|floatformat:2 }}</p>
+        </div>
+        <div class="dashboard-card card-simple">
+          <h4>Total Compras</h4>
+          <p>L {{ total_compras|floatformat:2 }}</p>
+        </div>
+      {% endif %}
+    {% endif %}
+
+    <div class="dashboard-card card-simple">
+      <h4>Total Productos</h4>
+      <p>{{ total_productos }}</p>
+    </div>
+
+    <div class="dashboard-card card-clientes">
+      <h4>Total Clientes</h4>
+      <p>{{ total_clientes }}</p>
+    </div>
+
+    <div class="dashboard-card card-simple">
+      <h4>Total Proveedores</h4>
+      <p>{{ total_proveedores }}</p>
+    </div>
+  </div>
+
+  <!-- ⚡ ACCESOS RÁPIDOS -->
+  <div class="dashboard-access">
+    <h3>⚡ Accesos Rápidos</h3>
+    <div class="quick-access">
+      {% if perms.ventas.view_venta %}
+        <a href="{% url 'dashboard_graficos' %}" class="btn">📊 Gráficas</a>
+        <a href="{% url 'ventas:resumen_ventas' %}" class="btn btn-outline-light">📋 Ver Ventas</a>
+      {% endif %}
+
+      {% if perms.compras.add_compra %}
+        <a href="{% url 'compras:crear_compra' %}" class="btn">📥 Nueva Compra</a>
+      {% endif %}
+
+      {% if perms.compras.view_compra %}
+        <a href="{% url 'compras:resumen_compras' %}" class="btn btn-outline-light">📄 Ver Compras</a>
+      {% endif %}
+
+      {% if perms.productos.add_producto %}
+        <a href="{% url 'productos:agregar_producto' %}" class="btn">➕ Nuevo Producto</a>
+      {% endif %}
+
+      {% if perms.cuentas.view_cuentaporcobrar or perms.cuentas.view_cuentaporpagar %}
+        <a href="{% url 'cuentas:resumen_cuentas' %}" class="btn btn-outline-light">💸 Cobrar y Pagar</a>
+      {% endif %}
+
+      {% if perms.clientes.add_cliente %}
+        <a href="{% url 'clientes:crear_cliente' %}" class="btn">👤 Nuevo Cliente</a>
+      {% endif %}
+
+      {% if perms.clientes.view_cliente %}
+        <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-outline-light">👥 Ver Clientes</a>
+      {% endif %}
+
+      {% if perms.proveedores.add_proveedor %}
+        <a href="{% url 'proveedores:registrar_proveedor' %}" class="btn">🏭 Nuevo Proveedor</a>
+      {% endif %}
+
+      {% if perms.proveedores.view_proveedor %}
+        <a href="{% url 'proveedores:lista_proveedores' %}" class="btn btn-outline-light">🏢 Ver Proveedores</a>
+      {% endif %}
+
+      {% if perms.cai.view_cai %}
+        <a href="{% url 'cai:listar_cai' %}" class="btn btn-outline-light">📋 Cais</a>
+      {% endif %}
+    </div>
+  </div>  
+
+  <!-- 📈 TENDENCIAS -->
+  <div class="tendencias">
+    <h3>📈 Tendencias</h3>
+    <p class="text-muted"></p>
+  </div>
+
+</div>
+{% endblock %}
+
+

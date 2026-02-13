@@ -38,6 +38,21 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core.apps.CoreConfig', 
+   
+
+    
+    'productos',
+    'ventas',
+    'compras',
+    'clientes',
+    'proveedores',
+    'empleados',
+    'configuracion',
+    'cai',
+    'cuentas',
+    'cotizaciones',
+    'caja',
+
 ]
 
 AUTH_USER_MODEL = 'core.Usuario'
@@ -75,7 +90,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'core.context_processors.empresa_context',
+                'core.context_processors.empresa_config',
+                'core.context_processors.modulos_config',
+
+
             ],   
         },
     },
@@ -131,6 +149,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"  # donde Django juntará todo para producción
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',  # tus archivos estáticos locales (CSS, JS, imágenes)

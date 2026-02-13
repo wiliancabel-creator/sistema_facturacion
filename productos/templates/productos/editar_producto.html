@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Editar Producto{% endblock %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2>✏️ Editar Producto: {{ producto.nombre }}</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+{% if producto.imagen %}
+  <div class="mb-3">
+      <label class="form-label">Imagen actual:</label><br>
+      <img src="{{ producto.imagen.url }}" style="max-height:120px; border-radius:8px;">
+  </div>
+{% endif %}
+
+
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">💾 Guardar cambios</button>
+        <a href="{% url 'productos:listar_productos' %}" class="btn btn-secondary">↩ Volver</a>
+    </form>
+</div>
+
+{% endblock %}
+

@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block title %}Resumen de Compras{% endblock %}
+{% block content %}
+
+<div class="contenedor">
+
+<h2>Resumen de Compras</h2>
+
+<style>
+.autocomplete-suggestions{
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  display: none;
+  z-index: 9999;
+}
+.autocomplete-suggestions.show{ display:block; }
+.autocomplete-item{
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+.autocomplete-item:hover{ background:#f2f2f2; }
+</style>
+
+<form method="get" class="row g-2 mb-4">
+
+  <div class="col-md-2">
+    <label class="form-label">Desde</label>
+    <input type="date" name="desde" value="{{ f.desde }}" class="form-control">
+  </div>
+
+  <div class="col-md-2">
+    <label class="form-label">Hasta</label>
+    <input type="date" name="hasta" value="{{ f.hasta }}" class="form-control">
+  </div>
+
+  <div class="col-md-4 position-relative">
+    <label class="form-label">Proveedor</label>
+
+    <input type="text"
+           id="proveedor-input"
+           name="proveedor_nombre"
+           value="{{ f.proveedor_nombre }}"
+           class="form-control"
+           placeholder="Escribí el proveedor...">
+
+    <input type="hidden"
+           id="proveedor-id"
+           name="proveedor_id"
+           value="{{ f.proveedor_id }}">
+
+    <div id="proveedor-suggestions" class="autocomplete-suggestions"></div>
+  </div>
+
+  <div class="col-md-2 d-flex align-items-end gap-2">
+    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+    <a href="{% url 'compras:resumen_compras' %}" class="btn btn-secondary w-100">Limpiar</a>
+  </div>
+
+</form>
+
+<p><strong>Total:</strong> L {{ total_general |floatformat:2 }}</p>
+
+<table class="table table-striped mt-3">
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Proveedor</th>
+      <th>Total</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for compra in compras %}
+    <tr>
+      <td>{{ compra.fecha }}</td>
+      <td>{{ compra.proveedor.nombre }}</td>
+      <td>L {{ compra.total }}</td>
+      <td>
+        <a href="{% url 'compras:resumen_compra' compra.id %}" class="btn btn-sm btn-outline-primary">Ver Detalle</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">No hay compras registradas con esos filtros.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const proveedorInput = document.getElementById('proveedor-input');
+  const proveedorSuggestions = document.getElementById('proveedor-suggestions');
+  const proveedorIdInput = document.getElementById('proveedor-id');
+  let timeoutProveedor = null;
+
+  if (!proveedorInput || !proveedorSuggestions || !proveedorIdInput) {
+    console.error("No se encontraron elementos del autocomplete de proveedores (IDs).");
+    return;
+  }
+
+  proveedorInput.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    clearTimeout(timeoutProveedor);
+
+    // si escribe algo nuevo, limpiamos el id
+    proveedorIdInput.value = "";
+
+    if (query.length < 2) {
+      proveedorSuggestions.classList.remove('show');
+      proveedorSuggestions.innerHTML = '';
+      return;
+    }
+
+    timeoutProveedor = setTimeout(() => {
+      fetch(`{% url 'sugerencias_proveedores' %}?q=${encodeURIComponent(query)}`)
+        .then(r => r.json())
+        .then(data => {
+          const proveedores = data.proveedores || [];
+          if (proveedores.length > 0) {
+            mostrarSugerenciasProveedores(proveedores);
+          } else {
+            proveedorSuggestions.classList.remove('show');
+            proveedorSuggestions.innerHTML = '';
+          }
+        })
+        .catch(err => console.error('Error:', err));
+    }, 300);
+  });
+
+  function mostrarSugerenciasProveedores(proveedores) {
+    proveedorSuggestions.innerHTML = '';
+
+    proveedores.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'autocomplete-item';
+      item.innerHTML = `
+        <strong>${p.nombre}</strong>
+        ${p.rtn ? `<small class="text-muted">RTN: ${p.rtn}</small>` : ''}
+      `;
+
+      item.addEventListener('click', () => {
+        proveedorInput.value = p.nombre;
+        proveedorIdInput.value = p.id;
+        proveedorSuggestions.classList.remove('show');
+        proveedorSuggestions.innerHTML = '';
+      });
+
+      proveedorSuggestions.appendChild(item);
+    });
+
+    proveedorSuggestions.classList.add('show');
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!proveedorInput.contains(e.target) && !proveedorSuggestions.contains(e.target)) {
+      proveedorSuggestions.classList.remove('show');
+    }
+  });
+});
+</script>
+
+{% endblock %}
+

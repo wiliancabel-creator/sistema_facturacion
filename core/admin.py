@@ -1,10 +1,13 @@
 from django.contrib import admin
-from .models import (
-    Categoria, Producto, Venta, DetalleVenta,
-    Compra, DetalleCompra, Cliente,
-    CuentaPorCobrar, CuentaPorPagar, Usuario,Cotizacion, Empleado,
-    Cai  # ← Importar el modelo Cai
-)
+from clientes.models import Cliente
+from compras.models import Compra, DetalleCompra
+from cuentas.models import CuentaPorCobrar, CuentaPorPagar
+from productos.models import Categoria, Producto
+from ventas.models import Venta, DetalleVenta
+from cai.models import Cai                             
+from core.models import Usuario
+from cotizaciones.models import Cotizacion
+from empleados.models import Empleado
 
 # Registración estándar de otros modelos
 admin.site.register(Categoria)

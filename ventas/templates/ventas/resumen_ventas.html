@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% block title %}Resumen de Ventas{% endblock %}
+{% block content %}
+
+
+
+<h2>Resumen de Ventas</h2>
+
+<!-- ✅ FILTROS AVANZADOS -->
+<form method="get" class="row g-2 mb-3">
+
+  <div class="col-md-2">
+    <label class="form-label">Desde</label>
+    <input type="date" name="desde" value="{{ f.desde }}" class="form-control">
+  </div>
+
+  <div class="col-md-2">
+    <label class="form-label">Hasta</label>
+    <input type="date" name="hasta" value="{{ f.hasta }}" class="form-control">
+  </div>
+
+  <div class="col-md-4 position-relative">
+    <label class="form-label">Cliente</label>
+
+    <input type="text"
+           id="cliente-input"
+           name="cliente_nombre"
+           value="{{ f.cliente_nombre }}"
+           class="form-control"
+           placeholder="Escribí el cliente...">
+
+    <input type="hidden"
+           id="cliente-id"
+           name="cliente_id"
+           value="{{ f.cliente_id }}">
+
+    <div id="cliente-suggestions" class="autocomplete-suggestions"></div>
+  </div>
+
+  <div class="col-md-2">
+  <label class="form-label">Tipo (Contado / Crédito)</label>
+  <select name="tipo_pago" class="form-select">
+    <option value="">Todos</option>
+    <option value="contado" {% if f.tipo_pago == 'contado' %}selected{% endif %}>Contado</option>
+    <option value="credito" {% if f.tipo_pago == 'credito' %}selected{% endif %}>Crédito</option>
+  </select>
+</div>
+
+<div class="col-md-2">
+  <label class="form-label">Método de pago</label>
+  <select name="metodo_pago" class="form-select">
+    <option value="">Todos</option>
+    <option value="efectivo" {% if f.metodo_pago == 'efectivo' %}selected{% endif %}>Efectivo</option>
+    <option value="tarjeta" {% if f.metodo_pago == 'tarjeta' %}selected{% endif %}>Tarjeta</option>
+    <option value="transferencia" {% if f.metodo_pago == 'transferencia' %}selected{% endif %}>Transferencia</option>
+  </select>
+</div>
+
+
+  <div class="col-md-2 d-flex align-items-end gap-2">
+    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+    <a href="{% url 'ventas:resumen_ventas' %}" class="btn btn-secondary w-100">Limpiar</a>
+  </div>
+
+</form>
+
+<p><strong>Total:</strong> L {{ total_general|floatformat:2 }}</p>
+
+<table class="table table-striped mt-3">
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Cliente</th>
+      <th>Total</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for venta in ventas %}
+    <tr>
+      <td>{{ venta.fecha }}</td>
+      <td>{{ venta.cliente.nombre }}</td>
+      <td>L {{ venta.total }}</td>
+      <td>
+        <a href="{% url 'ventas:factura' venta.id %}" class="btn btn-sm btn-outline-primary">Ver Factura</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">No hay ventas registradas con esos filtros.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script>
+// ========== BUSCADOR DINÁMICO DE CLIENTES (LISTA DE VENTAS) ==========
+document.addEventListener("DOMContentLoaded", function () {
+  const clienteInput = document.getElementById('cliente-input');
+  const clienteSuggestions = document.getElementById('cliente-suggestions');
+  const clienteIdInput = document.getElementById('cliente-id');
+  let timeoutCliente = null;
+
+  if (!clienteInput || !clienteSuggestions || !clienteIdInput) {
+    console.error("No se encontraron elementos del autocomplete (IDs).");
+    return;
+  }
+
+  clienteInput.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    clearTimeout(timeoutCliente);
+
+    // si escribe algo nuevo, limpiamos el id
+    clienteIdInput.value = "";
+
+    if (query.length < 2) {
+      clienteSuggestions.classList.remove('show');
+      clienteSuggestions.innerHTML = '';
+      return;
+    }
+
+    timeoutCliente = setTimeout(() => {
+      fetch(`{% url 'sugerencias_clientes' %}?q=${encodeURIComponent(query)}`)
+        .then(r => r.json())
+        .then(data => {
+          const clientes = data.clientes || [];
+          if (clientes.length > 0) {
+            mostrarSugerenciasClientes(clientes);
+          } else {
+            clienteSuggestions.classList.remove('show');
+            clienteSuggestions.innerHTML = '';
+          }
+        })
+        .catch(err => console.error('Error:', err));
+    }, 300);
+  });
+
+  function mostrarSugerenciasClientes(clientes) {
+    clienteSuggestions.innerHTML = '';
+
+    clientes.forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'autocomplete-item';
+      item.innerHTML = `
+        <strong>${c.nombre}</strong>
+        <small>${c.rtn ? `RTN: ${c.rtn}` : ''} ${c.telefono ? `| Tel: ${c.telefono}` : ''}</small>
+      `;
+
+      item.addEventListener('click', () => {
+        clienteInput.value = c.nombre;
+        clienteIdInput.value = c.id;
+        clienteSuggestions.classList.remove('show');
+        clienteSuggestions.innerHTML = '';
+      });
+
+      clienteSuggestions.appendChild(item);
+    });
+
+    clienteSuggestions.classList.add('show');
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!clienteInput.contains(e.target) && !clienteSuggestions.contains(e.target)) {
+      clienteSuggestions.classList.remove('show');
+    }
+  });
+});
+</script>
+
+{% endblock %}

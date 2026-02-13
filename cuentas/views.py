@@ -1,0 +1,183 @@
+
+from django.shortcuts import render, redirect, get_object_or_404
+
+from django.utils import timezone
+from cuentas.models import CuentaPorCobrar, CuentaPorPagar
+from datetime import datetime
+from decimal import Decimal
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, permission_required
+
+from core.decorators import requiere_modulo
+from django.db.models import Case, When, Value, IntegerField
+
+
+@login_required
+@requiere_modulo('mod_cuentas')
+@permission_required('cuentas.view_cuentaporcobrar', raise_exception=True)
+@permission_required('cuentas.view_cuentaporpagar', raise_exception=True)
+def resumen_cuentas(request):
+
+    # ✅ filtros
+    estado = request.GET.get('estado', '')
+    desde = request.GET.get('desde', '')
+    hasta = request.GET.get('hasta', '')
+
+    cliente_id = request.GET.get('cliente_id', '')
+    cliente_nombre = request.GET.get('cliente_nombre', '')
+
+    proveedor_id = request.GET.get('proveedor_id', '')
+    proveedor_nombre = request.GET.get('proveedor_nombre', '')
+
+    por_cobrar = CuentaPorCobrar.objects.all()
+    por_pagar = CuentaPorPagar.objects.all()
+
+    # ✅ estado
+    if estado:
+        por_cobrar = por_cobrar.filter(estado=estado)
+        por_pagar = por_pagar.filter(estado=estado)
+
+    # ✅ fecha (fecha de la venta/compra ligada)
+    if desde:
+        try:
+            f_desde = datetime.strptime(desde, "%Y-%m-%d").date()
+            por_cobrar = por_cobrar.filter(venta__fecha__date__gte=f_desde)
+            por_pagar = por_pagar.filter(compra__fecha__date__gte=f_desde)
+        except ValueError:
+            pass
+
+    if hasta:
+        try:
+            f_hasta = datetime.strptime(hasta, "%Y-%m-%d").date()
+            por_cobrar = por_cobrar.filter(venta__fecha__date__lte=f_hasta)
+            por_pagar = por_pagar.filter(compra__fecha__date__lte=f_hasta)
+        except ValueError:
+            pass
+
+    # ✅ cliente (solo por cobrar)
+    if cliente_id:
+        por_cobrar = por_cobrar.filter(cliente_id=cliente_id)
+
+    # ✅ proveedor (solo por pagar)
+    if proveedor_id:
+        por_pagar = por_pagar.filter(proveedor_id=proveedor_id)
+        
+
+
+    # ✅ ORDEN: pendientes primero, luego pagados, y más nuevos arriba
+    por_cobrar = por_cobrar.annotate(
+        orden_estado=Case(
+            When(estado='pendiente', then=Value(0)),
+            When(estado='pagado', then=Value(1)),
+            default=Value(2),
+            output_field=IntegerField()
+        )
+    ).order_by('orden_estado', '-venta__fecha', '-id')
+
+    por_pagar = por_pagar.annotate(
+        orden_estado=Case(
+            When(estado='pendiente', then=Value(0)),
+            When(estado='pagado', then=Value(1)),
+            default=Value(2),
+            output_field=IntegerField()
+        )
+    ).order_by('orden_estado', '-compra__fecha', '-id')
+
+
+
+    return render(request, 'cuentas/resumen_cuentas.html', {
+        'por_cobrar': por_cobrar,
+        'por_pagar': por_pagar,
+        'f': {
+            'estado': estado,
+            'desde': desde,
+            'hasta': hasta,
+            'cliente_id': cliente_id,
+            'cliente_nombre': cliente_nombre,
+            'proveedor_id': proveedor_id,
+            'proveedor_nombre': proveedor_nombre,
+        }
+    })
+    
+
+@login_required
+@requiere_modulo('mod_cuentas')
+@permission_required('cuentas.change_cuentaporcobrar', raise_exception=True)
+def registrar_pago_cliente(request, cuenta_id):
+    cuenta = get_object_or_404(CuentaPorCobrar, id=cuenta_id)
+
+    # Calculamos cuánto resta por pagar
+    restante = cuenta.monto_pendiente - cuenta.monto_pagado
+
+    if request.method == 'POST':
+        monto = Decimal(request.POST.get('monto'))
+
+        # Validación: no puede pagar más de lo que resta
+        if monto > restante:
+            messages.error(
+                request,
+                f"No podés pagar más de L {restante:.2f}. Ingresa un monto válido."
+            )
+            return render(request, 'cuentas/registrar_pago_cliente.html', {
+                'cuenta': cuenta,
+                'restante': restante
+            })
+
+        # Registro del pago
+        cuenta.monto_pagado += monto
+        cuenta.fecha_pago = timezone.now().date()
+
+        # Si cubrimos o excedemos el total, marcamos como pagado
+        if cuenta.monto_pagado >= cuenta.monto_pendiente:
+            cuenta.estado = 'pagado'
+
+        cuenta.save()
+        return redirect('cuentas:resumen_cuentas')
+
+    # GET: muestro el formulario
+    return render(request, 'cuentas/registrar_pago_cliente.html', {
+        'cuenta': cuenta,
+        'restante': restante
+    })
+
+
+@login_required
+@requiere_modulo('mod_cuentas')
+@permission_required('cuentas.change_cuentaporpagar', raise_exception=True)
+def registrar_pago_proveedor(request, cuenta_id):
+    cuenta = get_object_or_404(CuentaPorPagar, id=cuenta_id)
+
+    # Calculamos cuánto resta por pagar
+    restante = cuenta.monto_pendiente - cuenta.monto_pagado
+
+    if request.method == 'POST':
+        monto = Decimal(request.POST.get('monto'))
+
+        # Validación: no puede pagar más de lo que resta
+        if monto > restante:
+            messages.error(
+                request,
+                f"No podés pagar más de L {restante:.2f}. Ingresa un monto válido."
+            )
+            return render(request, 'cuentas/registrar_pago_proveedor.html', {
+                'cuenta': cuenta,
+                'restante': restante
+            })
+
+        # Registrar el pago
+        cuenta.monto_pagado += monto
+        cuenta.fecha_pago = timezone.now().date()
+
+        # Si cubrimos o excedemos el total, marcamos como pagado
+        if cuenta.monto_pagado >= cuenta.monto_pendiente:
+            cuenta.estado = 'pagado'
+
+        cuenta.save()
+        return redirect('cuentas:resumen_cuentas')
+
+    # Si es GET, mostramos el formulario con el saldo restante
+    return render(request, 'cuentas/registrar_pago_proveedor.html', {
+        'cuenta': cuenta,
+        'restante': restante
+    })
+

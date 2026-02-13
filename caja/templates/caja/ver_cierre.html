@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-3">
+  <div class="d-flex justify-content-between align-items-center">
+    <h4>🧾 Cierre #{{ sesion.id }}</h4>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-dark btn-sm" target="_blank" href="{% url 'caja:ticket_cierre' sesion.id %}">🖨️ Ticket</a>
+      <a class="btn btn-secondary btn-sm" href="{% url 'caja:historial_cajas' %}">Volver</a>
+    </div>
+  </div>
+
+  <div class="card mt-2">
+    <div class="card-body">
+      <div><strong>Caja:</strong> {{ sesion.caja.nombre }}</div>
+      <div><strong>Cajero:</strong> {{ sesion.cajero }}</div>
+      <div><strong>Apertura:</strong> {{ sesion.fecha_apertura|date:"Y-m-d H:i" }}</div>
+      <div><strong>Cierre:</strong> {{ sesion.fecha_cierre|date:"Y-m-d H:i" }}</div>
+      <hr>
+      <div><strong>Apertura:</strong> L {{ sesion.monto_apertura }}</div>
+      <div><strong>Efectivo sistema:</strong> L {{ sesion.total_efectivo }}</div>
+      <div><strong>Tarjeta sistema:</strong> L {{ sesion.total_tarjeta }}</div>
+      <div><strong>Transferencia sistema:</strong> L {{ sesion.total_transferencia }}</div>
+      <hr>
+      <div><strong>Ingresos manuales:</strong> L {{ sesion.ingresos_efectivo }}</div>
+      <div><strong>Egresos manuales:</strong> L {{ sesion.egresos_efectivo }}</div>
+      <hr>
+      <div><strong>Efectivo teórico:</strong> L {{ sesion.efectivo_teorico }}</div>
+      <div><strong>Efectivo contado:</strong> L {{ sesion.efectivo_contado }}</div>
+      <div><strong>Diferencia:</strong> L {{ sesion.diferencia }}</div>
+
+      {% if sesion.observacion %}
+      <hr>
+      <div><strong>Observación:</strong> {{ sesion.observacion }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
