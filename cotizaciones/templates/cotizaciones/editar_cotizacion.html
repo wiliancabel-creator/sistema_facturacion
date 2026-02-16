@@ -14,9 +14,13 @@
   
   <h2 class="mb-3">🧾 Editar Cotización</h2> 
 
-  <form method="post" action="{% url 'cotizaciones:editar_cotizacion' cotizacion_id=cotizacion.id %}" id="cotizacion-form">
-    
+  
+<form method="post"
+      action="{% if modo_edicion %}{% url 'cotizaciones:editar_cotizacion' cotizacion.id %}{% else %}{% url 'cotizaciones:crear_cotizacion' %}{% endif %}"
+      id="cotizacion-form">
+
     {% csrf_token %}
+    
     {{ formset.management_form }}
 
     <div class="row g-3">
@@ -205,16 +209,22 @@
 }
 </style>
 
+
 <script>
   window.PRELOAD_COT = {% if modo_edicion %}{{ preload_json|safe }}{% else %}null{% endif %};
 </script>
-
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
   /* ===================================================================
-     VARIABLES PRINCIPALES
+     HELPERS (DEBEN IR ARRIBA)
+  =================================================================== */
+  const safeNum = v => Number.parseFloat(v) || 0;
+  const formatMoney = v => parseFloat(v || 0).toFixed(2);
+
+  /* ===================================================================
+     ELEMENTOS
   =================================================================== */
   const tbody = document.getElementById('tbody-productos');
   const totalDisplay = document.getElementById('total-display');
@@ -224,62 +234,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const errorMsg = document.getElementById('error-msg');
   const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
 
-  let productos = [];
-
-// ✅ Precargar si es edición
-if (window.PRELOAD_COT) {
-  const pre = window.PRELOAD_COT;
-
   // cliente
   const clienteInput = document.getElementById('cliente-input');
+  const clienteSuggestions = document.getElementById('cliente-suggestions');
   const clienteIdInput = document.getElementById('cliente-id');
   const clienteNombreDisplay = document.getElementById('cliente-nombre-display');
 
-  if (pre.cliente && pre.cliente.id) {
-    clienteInput.value = pre.cliente.nombre || '';
-    clienteIdInput.value = pre.cliente.id;
-    clienteNombreDisplay.textContent = pre.cliente.nombre || '';
-  }
+  // productos autocomplete
+  const suggestionsBox = document.getElementById('suggestions-box');
 
-  // tipo pago
-  const tipoPagoSelect = document.querySelector('select[name="tipo_pago"]');
-  if (tipoPagoSelect && pre.tipo_pago) tipoPagoSelect.value = pre.tipo_pago;
-
-  // productos
-  if (Array.isArray(pre.productos)) {
-    productos = pre.productos.map(p => ({
-      id: p.id,
-      codigo: p.codigo,
-      codigo_barra: p.codigo_barra || '',
-      nombre: p.nombre,
-      stock: p.stock,
-      cantidad: p.cantidad || 1,
-      precio_unitario: parseFloat(p.precio_unitario) || 0,
-      descuento: parseFloat(p.descuento) || 0,
-      tipo_impuesto: p.tipo_impuesto || 'E'
-    }));
-  }
-
-  renderTabla();
-}
-
-
-
-  const safeNum = v => Number.parseFloat(v) || 0;
-  const formatMoney = v => parseFloat(v || 0).toFixed(2);
+  let productos = [];
+  let timeoutId = null;
+  let timeoutCliente = null;
 
   /* ===================================================================
-     HABILITAR BOTÓN
+     BOTÓN HABILITAR/DESHABILITAR
   =================================================================== */
   function actualizarEstadoBoton() {
-    const clienteId = (document.getElementById('cliente-id').value || '').trim();
+    const clienteId = (clienteIdInput.value || '').trim();
     const clienteOK = clienteId !== '';
     const productosOK = productos.length > 0;
     venderBtn.disabled = !(clienteOK && productosOK);
   }
 
   /* ===================================================================
-     FUNCIONES DE CÁLCULO
+     TOTALES
   =================================================================== */
   function calcularTotalesJS() {
     let total = 0;
@@ -299,7 +278,7 @@ if (window.PRELOAD_COT) {
   }
 
   /* ===================================================================
-     RENDERIZAR TABLA DE PRODUCTOS
+     RENDER TABLA + HIDDEN INPUTS (FORMSET)
   =================================================================== */
   function renderTabla() {
     tbody.innerHTML = '';
@@ -380,10 +359,10 @@ if (window.PRELOAD_COT) {
   window.eliminarProducto = i => { productos.splice(i, 1); renderTabla(); };
 
   /* ===================================================================
-     BUSCAR Y AGREGAR PRODUCTO (ENTER / BOTÓN)
+     BUSCAR Y AGREGAR PRODUCTO (POR CÓDIGO)
   =================================================================== */
   function buscarYAgregar(codigo) {
-    if (!codigo) return errorMsg.textContent = "Ingrese un código válido";
+    if (!codigo) { errorMsg.textContent = "Ingrese un código válido"; return; }
 
     fetch(`/buscar-producto/?codigo=${encodeURIComponent(codigo)}`)
       .then(r => r.json())
@@ -394,9 +373,8 @@ if (window.PRELOAD_COT) {
         }
 
         const existe = productos.find(p => p.id === data.id);
-        if (existe) {
-          existe.cantidad++;
-        } else {
+        if (existe) existe.cantidad++;
+        else {
           productos.push({
             id: data.id,
             codigo: data.codigo,
@@ -404,7 +382,7 @@ if (window.PRELOAD_COT) {
             nombre: data.nombre,
             stock: data.stock,
             cantidad: 1,
-            precio_unitario: parseFloat(data.precio),
+            precio_unitario: parseFloat(data.precio) || 0,
             descuento: 0,
             tipo_impuesto: data.tipo_impuesto || 'E'
           });
@@ -415,26 +393,22 @@ if (window.PRELOAD_COT) {
         codigoInput.value = "";
         codigoInput.focus();
       })
-      .catch(err => {
-        console.error('Error:', err);
+      .catch(() => {
         errorMsg.textContent = "Error al buscar producto";
       });
   }
 
-  addByCodeBtn.onclick = () => buscarYAgregar(codigoInput.value.trim());
-  codigoInput.onkeypress = e => {
+  addByCodeBtn.addEventListener('click', () => buscarYAgregar(codigoInput.value.trim()));
+  codigoInput.addEventListener('keypress', (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       buscarYAgregar(codigoInput.value.trim());
     }
-  };
+  });
 
   /* ===================================================================
-     AUTOCOMPLETADO DE PRODUCTOS
+     AUTOCOMPLETADO PRODUCTOS
   =================================================================== */
-  const suggestionsBox = document.getElementById('suggestions-box');
-  let timeoutId = null;
-
   codigoInput.addEventListener('input', (e) => {
     const query = e.target.value.trim();
     clearTimeout(timeoutId);
@@ -448,59 +422,48 @@ if (window.PRELOAD_COT) {
       fetch(`/sugerencias-productos/?q=${encodeURIComponent(query)}`)
         .then(r => r.json())
         .then(data => {
-          if (data.productos && data.productos.length > 0) {
-            mostrarSugerenciasProductos(data.productos);
-          } else {
+          suggestionsBox.innerHTML = '';
+          if (!data.productos || data.productos.length === 0) {
             suggestionsBox.classList.remove('show');
+            return;
           }
+
+          data.productos.forEach(p => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            item.innerHTML = `
+              <strong>${p.codigo}</strong> - ${p.nombre}
+              <small>Código de barra: ${p.codigo_barra || 'N/A'} | Precio: L ${p.precio} | Stock: ${p.stock}</small>
+            `;
+            item.addEventListener('click', () => {
+              const existe = productos.find(prod => prod.id === p.id);
+              if (existe) existe.cantidad++;
+              else {
+                productos.push({
+                  id: p.id,
+                  codigo: p.codigo,
+                  codigo_barra: p.codigo_barra || '',
+                  nombre: p.nombre,
+                  stock: p.stock,
+                  cantidad: 1,
+                  precio_unitario: parseFloat(p.precio) || 0,
+                  descuento: 0,
+                  tipo_impuesto: p.tipo_impuesto || 'E'
+                });
+              }
+              renderTabla();
+              codigoInput.value = '';
+              suggestionsBox.classList.remove('show');
+              codigoInput.focus();
+            });
+            suggestionsBox.appendChild(item);
+          });
+
+          suggestionsBox.classList.add('show');
         })
-        .catch(err => {
-          console.error('Error al buscar sugerencias:', err);
-          suggestionsBox.classList.remove('show');
-        });
+        .catch(() => suggestionsBox.classList.remove('show'));
     }, 300);
   });
-
-  function mostrarSugerenciasProductos(sugerencias) {
-    suggestionsBox.innerHTML = '';
-
-    sugerencias.forEach(p => {
-      const item = document.createElement('div');
-      item.className = 'autocomplete-item';
-      item.innerHTML = `
-        <strong>${p.codigo}</strong> - ${p.nombre}
-        <small>Código de barra: ${p.codigo_barra || 'N/A'} | Precio: L ${p.precio} | Stock: ${p.stock}</small>
-      `;
-
-      item.addEventListener('click', () => {
-        const existeEnTabla = productos.find(prod => prod.id === p.id);
-
-        if (existeEnTabla) existeEnTabla.cantidad++;
-        else {
-          productos.push({
-            id: p.id,
-            codigo: p.codigo,
-            codigo_barra: p.codigo_barra || '',
-            nombre: p.nombre,
-            stock: p.stock,
-            cantidad: 1,
-            precio_unitario: parseFloat(p.precio),
-            descuento: 0,
-            tipo_impuesto: p.tipo_impuesto || 'E'
-          });
-        }
-
-        renderTabla();
-        codigoInput.value = '';
-        suggestionsBox.classList.remove('show');
-        codigoInput.focus();
-      });
-
-      suggestionsBox.appendChild(item);
-    });
-
-    suggestionsBox.classList.add('show');
-  }
 
   document.addEventListener('click', (e) => {
     if (!codigoInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
@@ -508,16 +471,79 @@ if (window.PRELOAD_COT) {
     }
   });
 
-  // ✅ BOTONES DE ACCESO RÁPIDO
   document.querySelectorAll('.quick-product').forEach(btn => {
     btn.addEventListener('click', () => buscarYAgregar(btn.dataset.codigo));
   });
 
   /* ===================================================================
-     SUBMIT: VALIDAR CLIENTE + PRODUCTOS
+     AUTOCOMPLETADO CLIENTES
+  =================================================================== */
+  clienteInput.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    clearTimeout(timeoutCliente);
+
+    if (query.length < 2) {
+      clienteSuggestions.classList.remove('show');
+      return;
+    }
+
+    timeoutCliente = setTimeout(() => {
+      fetch(`/sugerencias-clientes/?q=${encodeURIComponent(query)}`)
+        .then(r => r.json())
+        .then(data => {
+          clienteSuggestions.innerHTML = '';
+          if (!data.clientes || data.clientes.length === 0) {
+            clienteSuggestions.classList.remove('show');
+            return;
+          }
+
+          data.clientes.forEach(c => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            item.innerHTML = `
+              <strong>${c.nombre}</strong>
+              <small>${c.rtn ? `RTN: ${c.rtn}` : ''} ${c.telefono ? `| Tel: ${c.telefono}` : ''}</small>
+            `;
+            item.addEventListener('click', () => {
+              clienteInput.value = c.nombre;
+              clienteIdInput.value = c.id;
+              clienteNombreDisplay.textContent = c.nombre;
+              clienteSuggestions.classList.remove('show');
+              actualizarEstadoBoton();
+            });
+            clienteSuggestions.appendChild(item);
+          });
+
+          clienteSuggestions.classList.add('show');
+        });
+    }, 300);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!clienteInput.contains(e.target) && !clienteSuggestions.contains(e.target)) {
+      clienteSuggestions.classList.remove('show');
+    }
+  });
+
+  document.getElementById('btn-consumidor-final').addEventListener('click', () => {
+    fetch('/sugerencias-clientes/?q=CONSUMIDOR')
+      .then(r => r.json())
+      .then(data => {
+        const consumidor = (data.clientes || []).find(c => (c.nombre || '').toUpperCase().includes('CONSUMIDOR FINAL'));
+        if (!consumidor) return alert('No se encontró el cliente CONSUMIDOR FINAL en la base de datos');
+
+        clienteInput.value = consumidor.nombre;
+        clienteIdInput.value = consumidor.id;
+        clienteNombreDisplay.textContent = consumidor.nombre;
+        actualizarEstadoBoton();
+      });
+  });
+
+  /* ===================================================================
+     SUBMIT VALIDACIÓN
   =================================================================== */
   document.getElementById('cotizacion-form').addEventListener('submit', function(e) {
-    const clienteId = (document.getElementById('cliente-id').value || '').trim();
+    const clienteId = (clienteIdInput.value || '').trim();
     const hayProductos = productos.length > 0;
 
     if (!hayProductos) {
@@ -533,135 +559,42 @@ if (window.PRELOAD_COT) {
     }
   });
 
-  // inicial
+  /* ===================================================================
+     ✅ PRECARGA EDICIÓN (AHORA SÍ, AL FINAL)
+  =================================================================== */
+  if (window.PRELOAD_COT) {
+    const pre = window.PRELOAD_COT;
+
+    if (pre.cliente && pre.cliente.id) {
+      clienteInput.value = pre.cliente.nombre || '';
+      clienteIdInput.value = pre.cliente.id;
+      clienteNombreDisplay.textContent = pre.cliente.nombre || '';
+    }
+
+    const tipoPagoSelect = document.querySelector('select[name="tipo_pago"]');
+    if (tipoPagoSelect && pre.tipo_pago) tipoPagoSelect.value = pre.tipo_pago;
+
+    if (Array.isArray(pre.productos)) {
+      productos = pre.productos.map(p => ({
+        id: p.id,
+        codigo: p.codigo,
+        codigo_barra: p.codigo_barra || '',
+        nombre: p.nombre,
+        stock: p.stock,
+        cantidad: p.cantidad || 1,
+        precio_unitario: parseFloat(p.precio_unitario) || 0,
+        descuento: parseFloat(p.descuento) || 0,
+        tipo_impuesto: p.tipo_impuesto || 'E'
+      }));
+    }
+  }
+
   renderTabla();
   actualizarEstadoBoton();
 
-}); // END DOMContentLoaded
-
-/* ===================================================================
-   BUSCADOR DINÁMICO DE CLIENTES
-=================================================================== */
-const clienteInput = document.getElementById('cliente-input');
-const clienteSuggestions = document.getElementById('cliente-suggestions');
-const clienteIdInput = document.getElementById('cliente-id');
-const clienteNombreDisplay = document.getElementById('cliente-nombre-display');
-const venderBtnGlobal = document.getElementById('vender-btn');
-
-let timeoutCliente = null;
-
-clienteInput.addEventListener('input', (e) => {
-  const query = e.target.value.trim();
-  clearTimeout(timeoutCliente);
-
-  if (query.length < 2) {
-    clienteSuggestions.classList.remove('show');
-    return;
-  }
-
-  timeoutCliente = setTimeout(() => {
-    fetch(`/sugerencias-clientes/?q=${encodeURIComponent(query)}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.clientes && data.clientes.length > 0) {
-          mostrarSugerenciasClientes(data.clientes);
-        } else {
-          clienteSuggestions.classList.remove('show');
-        }
-      })
-      .catch(err => console.error('Error:', err));
-  }, 300);
-});
-
-function mostrarSugerenciasClientes(clientes) {
-  clienteSuggestions.innerHTML = '';
-
-  clientes.forEach(c => {
-    const item = document.createElement('div');
-    item.className = 'autocomplete-item';
-    item.innerHTML = `
-      <strong>${c.nombre}</strong>
-      <small>${c.rtn ? `RTN: ${c.rtn}` : ''} ${c.telefono ? `| Tel: ${c.telefono}` : ''}</small>
-    `;
-
-    item.addEventListener('click', () => {
-      clienteInput.value = c.nombre;
-      clienteIdInput.value = c.id;
-      clienteNombreDisplay.textContent = c.nombre;
-      clienteSuggestions.classList.remove('show');
-
-      // habilitar si ya hay productos
-      venderBtnGlobal.disabled = !(document.querySelectorAll('#tbody-productos tr').length > 0 && clienteIdInput.value.trim() !== '');
-    });
-
-    clienteSuggestions.appendChild(item);
-  });
-
-  clienteSuggestions.classList.add('show');
-}
-
-document.addEventListener('click', (e) => {
-  if (!clienteInput.contains(e.target) && !clienteSuggestions.contains(e.target)) {
-    clienteSuggestions.classList.remove('show');
-  }
-});
-
-// ========== BOTÓN CONSUMIDOR FINAL ==========
-document.getElementById('btn-consumidor-final').addEventListener('click', () => {
-  fetch('/sugerencias-clientes/?q=CONSUMIDOR')
-    .then(r => r.json())
-    .then(data => {
-      if (data.clientes && data.clientes.length > 0) {
-        const consumidor = data.clientes.find(c => c.nombre.toUpperCase().includes('CONSUMIDOR FINAL'));
-        if (consumidor) {
-          clienteInput.value = consumidor.nombre;
-          clienteIdInput.value = consumidor.id;
-          clienteNombreDisplay.textContent = consumidor.nombre;
-
-          venderBtnGlobal.disabled = !(document.querySelectorAll('#tbody-productos tr').length > 0 && clienteIdInput.value.trim() !== '');
-        } else {
-          alert('No se encontró el cliente CONSUMIDOR FINAL en la base de datos');
-        }
-      }
-    });
-});
-
-// ========== MODAL NUEVO CLIENTE ==========
-document.getElementById('btn-nuevo-cliente').addEventListener('click', () => {
-  const modal = new bootstrap.Modal(document.getElementById('modalNuevoCliente'));
-  modal.show();
-});
-
-document.getElementById('btn-guardar-cliente').addEventListener('click', () => {
-  const formData = new FormData(document.getElementById('form-nuevo-cliente'));
-
-  fetch('/crear-cliente-ajax/', {
-    method: 'POST',
-    body: formData,
-    headers: {'X-CSRFToken': formData.get('csrfmiddlewaretoken')}
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.success) {
-      clienteInput.value = data.cliente.nombre;
-      clienteIdInput.value = data.cliente.id;
-      clienteNombreDisplay.textContent = data.cliente.nombre;
-      bootstrap.Modal.getInstance(document.getElementById('modalNuevoCliente')).hide();
-      document.getElementById('form-nuevo-cliente').reset();
-      document.getElementById('error-cliente').classList.add('d-none');
-
-      venderBtnGlobal.disabled = !(document.querySelectorAll('#tbody-productos tr').length > 0 && clienteIdInput.value.trim() !== '');
-    } else {
-      document.getElementById('error-cliente').textContent = data.error || 'Error al crear cliente';
-      document.getElementById('error-cliente').classList.remove('d-none');
-    }
-  })
-  .catch(() => {
-    document.getElementById('error-cliente').textContent = 'Error de conexión';
-    document.getElementById('error-cliente').classList.remove('d-none');
-  });
 });
 </script>
 
 
 {% endblock %}
+

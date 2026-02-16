@@ -15,7 +15,7 @@ class DetalleCotizacionForm(forms.ModelForm):
         model = DetalleCotizacion
         fields = ['producto', 'cantidad', 'precio_unitario', 'descuento']
         widgets = {
-            'producto': forms.HiddenInput(),
+            'producto': forms.Select(attrs={'class': 'form-control'}),
             'cantidad': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': '1',

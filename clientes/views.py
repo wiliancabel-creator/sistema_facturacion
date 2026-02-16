@@ -7,14 +7,36 @@ from clientes.forms import ClienteForm
 from django.contrib.auth.decorators import login_required, permission_required
 
 from django.http import JsonResponse
-
+from django.core.paginator import Paginator
+from django.db.models import Q
 
 @login_required
 
 @permission_required('clientes.view_cliente', raise_exception=True)
 def listar_clientes(request):
-    clientes = Cliente.objects.all()
-    return render(request, 'clientes/listar_clientes.html', {'clientes': clientes})
+    q = (request.GET.get('q') or '').strip()
+
+    clientes_qs = Cliente.objects.all().order_by('-id')
+
+    # ✅ FILTRO (busca en TODOS, no solo la página)
+    if q:
+        clientes_qs = clientes_qs.filter(
+            Q(nombre__icontains=q) |
+            Q(telefono__icontains=q) |
+            Q(correo__icontains=q) |
+            Q(rtn__icontains=q)   # si tu modelo tiene rtn
+        )
+
+    paginator = Paginator(clientes_qs, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'clientes/listar_clientes.html', {
+        'page_obj': page_obj,
+        'clientes': page_obj.object_list,
+        'q': q,
+    })
+
 
 @login_required
 

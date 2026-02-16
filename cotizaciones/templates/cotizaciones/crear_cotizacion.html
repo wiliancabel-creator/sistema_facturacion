@@ -14,7 +14,10 @@
   
   <h2 class="mb-3">🧾 Registrar Cotización</h2> 
 
-  <form method="post" action="{% url 'cotizaciones:crear_cotizacion' %}" id="cotizacion-form">
+  <form method="post"
+      action="{% if modo_edicion %}{% url 'cotizaciones:editar_cotizacion' cotizacion.id %}{% else %}{% url 'cotizaciones:crear_cotizacion' %}{% endif %}"
+      id="cotizacion-form">
+
     
     {% csrf_token %}
     {{ formset.management_form }}
@@ -51,7 +54,7 @@
 <small class="text-muted d-block mb-3">Cliente seleccionado: <strong id="cliente-nombre-display">Ninguno</strong></small>
   
 
-        <div class="mb-2">{{ cotizacion_form.tipo_pago }}</div>
+       
 
         
        

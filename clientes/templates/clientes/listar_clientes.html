@@ -3,32 +3,54 @@
 {% block content %}
 
 <div class="contenedor">
-    
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>🧑‍💼 Clientes</h2>
     <a href="{% url 'clientes:crear_cliente' %}" class="btn btn-primary">➕ Nuevo Cliente</a>
+  </div>
 
-    <table class="tabla">   <!-- aquí aplicamos la clase base -->
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Teléfono</th>
-                <th>Correo</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for cliente in clientes %}
-            <tr>
-                <td>{{ cliente.nombre }}</td>
-                <td>{{ cliente.telefono }}</td>
-                <td>{{ cliente.correo }}</td>
-            </tr>
-        {% empty %}
-            <tr>
-                <td colspan="3">No hay clientes registrados.</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Teléfono</th>
+        <th>Correo</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cliente in page_obj.object_list %}
+        <tr>
+          <td>{{ cliente.nombre }}</td>
+          <td>{{ cliente.telefono }}</td>
+          <td>{{ cliente.correo }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="3">No hay clientes registrados.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <small class="text-muted">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} — Total: {{ page_obj.paginator.count }}
+      </small>
+
+      <div class="btn-group">
+        {% if page_obj.has_previous %}
+          <a class="btn btn-outline-secondary btn-sm" href="?page=1">&laquo; Primera</a>
+          <a class="btn btn-outline-secondary btn-sm" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+        {% endif %}
+
+        {% if page_obj.has_next %}
+          <a class="btn btn-outline-secondary btn-sm" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+          <a class="btn btn-outline-secondary btn-sm" href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
 
 </div>
 

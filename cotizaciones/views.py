@@ -80,11 +80,10 @@ def crear_cotizacion(request):
         cotizacion_form = CotizacionForm(request.POST)
         formset = DetalleCotizacionFormSet(request.POST)
 
-        # cliente por hidden input (igual ventas)
+        # cliente por hidden input
         cliente_id = (request.POST.get('cliente') or '').strip()
         cliente = Cliente.objects.filter(id=cliente_id).first() if cliente_id.isdigit() else None
 
-        # filtrar detalles válidos (igual ventas)
         forms_validos = [
             f for f in formset
             if f.is_valid()
@@ -143,7 +142,9 @@ def crear_cotizacion(request):
                     cotizacion.subtotal_g18 = subtotal_g18
                     cotizacion.impuesto_15 = impuesto_15
                     cotizacion.impuesto_18 = impuesto_18
-                    cotizacion.total = (subtotal_exento + subtotal_g15 + subtotal_g18 + impuesto_15 + impuesto_18).quantize(Decimal('0.01'))
+                    cotizacion.total = (
+                        subtotal_exento + subtotal_g15 + subtotal_g18 + impuesto_15 + impuesto_18
+                    ).quantize(Decimal('0.01'))
                     cotizacion.save()
 
                     messages.success(request, f'✅ Cotización #{cotizacion.id} creada — Total L{cotizacion.total}')
@@ -151,7 +152,6 @@ def crear_cotizacion(request):
 
             except Exception as e:
                 messages.error(request, f'❌ Error: {str(e)}')
-
         else:
             if not cotizacion_form.is_valid():
                 messages.error(request, '❌ Error en tipo de pago.')
@@ -167,7 +167,10 @@ def crear_cotizacion(request):
     return render(request, 'cotizaciones/crear_cotizacion.html', {
         'cotizacion_form': cotizacion_form,
         'formset': formset,
+        'modo_edicion': False,
+        'preload_json': json.dumps({"productos": [], "cliente": {"id": "", "nombre": ""}}),
     })
+
 
 
 @login_required
@@ -176,7 +179,7 @@ def crear_cotizacion(request):
 def editar_cotizacion(request, cotizacion_id):
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
 
-    if cotizacion.estado == 'facturada':
+    if getattr(cotizacion, 'estado', '') == 'facturada':
         messages.warning(request, "⚠️ Esta cotización ya fue facturada y no se puede editar.")
         return redirect('cotizaciones:lista_cotizaciones')
 
@@ -195,14 +198,14 @@ def editar_cotizacion(request, cotizacion_id):
         "productos": [
             {
                 "id": d.producto_id,
-                "codigo": d.producto.codigo,
-                "codigo_barra": d.producto.codigo_barra or "",
+                "codigo": getattr(d.producto, 'codigo', ''),
+                "codigo_barra": getattr(d.producto, 'codigo_barra', '') or "",
                 "nombre": d.producto.nombre,
-                "stock": d.producto.stock,
+                "stock": getattr(d.producto, 'stock', 0),
                 "cantidad": d.cantidad,
                 "precio_unitario": float(d.precio_unitario),
                 "descuento": float(d.descuento),
-                "tipo_impuesto": d.producto.tipo_impuesto or "E",
+                "tipo_impuesto": getattr(d.producto, 'tipo_impuesto', 'E') or "E",
             }
             for d in cotizacion.detalles.select_related('producto').all()
         ]
@@ -229,6 +232,7 @@ def editar_cotizacion(request, cotizacion_id):
                     # actualizar cabecera
                     cotizacion = cotizacion_form.save(commit=False)
                     cotizacion.cliente = cliente
+                    cotizacion.save()
 
                     # borrar detalles anteriores
                     cotizacion.detalles.all().delete()
@@ -272,7 +276,6 @@ def editar_cotizacion(request, cotizacion_id):
                     cotizacion.total = (
                         subtotal_exento + subtotal_g15 + subtotal_g18 + impuesto_15 + impuesto_18
                     ).quantize(Decimal('0.01'))
-
                     cotizacion.save()
 
                     messages.success(request, f'✅ Cotización #{cotizacion.id} actualizada.')
@@ -285,12 +288,22 @@ def editar_cotizacion(request, cotizacion_id):
                 messages.error(request, "❌ Debe seleccionar un cliente válido.")
             if not forms_validos:
                 messages.error(request, "❌ Debe agregar al menos un producto válido.")
-
     else:
         cotizacion_form = CotizacionForm(instance=cotizacion)
-        formset = DetalleCotizacionFormSet()
 
-    return render(request, 'cotizaciones/crear_cotizacion.html', {
+        # ✅ AQUÍ ESTÁ EL FIX: cargar detalles existentes en el formset
+        initial_detalles = [
+            {
+                'producto': d.producto_id,
+                'cantidad': d.cantidad,
+                'precio_unitario': d.precio_unitario,
+                'descuento': d.descuento,
+            }
+            for d in cotizacion.detalles.all()
+        ]
+        formset = DetalleCotizacionFormSet(initial=initial_detalles)
+
+    return render(request, 'cotizaciones/editar_cotizacion.html', {
         'cotizacion_form': cotizacion_form,
         'formset': formset,
         'modo_edicion': True,

@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .import views
+from . import views
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
@@ -21,7 +21,7 @@ urlpatterns = [
     path('cai/', include('cai.urls')),
     path('cotizaciones/', include('cotizaciones.urls')),
     path('cuentas/', include('cuentas.urls')),
-    path('caja/', include('caja.urls', namespace='caja')),
+    path('caja/', include(('caja.urls', 'caja'), namespace='caja')),
 
 
     # AJAX (por ahora puede quedarse en core)
