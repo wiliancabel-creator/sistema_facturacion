@@ -1,16 +1,14 @@
-
-from django.shortcuts import render, redirect
-
+from django.shortcuts import render, redirect, get_object_or_404
 from clientes.models import Cliente
 from clientes.forms import ClienteForm
 
 from django.contrib.auth.decorators import login_required, permission_required
-
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.db.models import Q
 
 from core.decorators import requiere_modulo
+
 
 @login_required
 @requiere_modulo('mod_clientes')
@@ -18,15 +16,17 @@ from core.decorators import requiere_modulo
 def listar_clientes(request):
     q = (request.GET.get('q') or '').strip()
 
-    clientes_qs = Cliente.objects.all().order_by('-id')
+    # 🔒 SOLO clientes de la empresa actual
+    clientes_qs = Cliente.objects.filter(
+        empresa=request.empresa
+    ).order_by('-id')
 
-    # ✅ FILTRO (busca en TODOS, no solo la página)
+    # 🔎 FILTRO SOBRE TODOS LOS CLIENTES DE ESA EMPRESA
     if q:
         clientes_qs = clientes_qs.filter(
             Q(nombre__icontains=q) |
             Q(telefono__icontains=q) |
-            Q(correo__icontains=q) |
-            Q(rtn__icontains=q)   # si tu modelo tiene rtn
+            Q(rtn__icontains=q)
         )
 
     paginator = Paginator(clientes_qs, 15)
@@ -47,10 +47,16 @@ def crear_cliente(request):
     if request.method == 'POST':
         form = ClienteForm(request.POST)
         if form.is_valid():
-            form.save()
+            cliente = form.save(commit=False)
+
+            # 🔒 Asignar empresa automáticamente
+            cliente.empresa = request.empresa
+            cliente.save()
+
             return redirect('clientes:listar_clientes')
     else:
         form = ClienteForm()
+
     return render(request, 'clientes/crear_cliente.html', {'form': form})
 
 
@@ -58,9 +64,16 @@ def crear_cliente(request):
 @requiere_modulo('mod_clientes')
 def buscar_clientes(request):
     term = request.GET.get('q', '')
-    clientes = Cliente.objects.filter(nombre__icontains=term).values('id', 'nombre')[:20]
+
+    # 🔒 SOLO clientes de la empresa actual
+    clientes = Cliente.objects.filter(
+        empresa=request.empresa,
+        nombre__icontains=term
+    ).values('id', 'nombre')[:20]
+
     results = [
         {"id": c["id"], "text": f"{c['id']} - {c['nombre']}"}
         for c in clientes
     ]
+
     return JsonResponse({"results": results})
