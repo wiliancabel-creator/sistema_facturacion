@@ -1,25 +1,23 @@
 # core/models.py - VERSIÓN CORREGIDA
 from django.db import models
 
+from core.models import Empresa
 
 class EmpresaConfig(models.Model):
+    empresa = models.OneToOneField(Empresa, on_delete=models.CASCADE, related_name="config")
     nombre = models.CharField(max_length=150)
-    rtn = models.CharField(max_length=20)
-    direccion = models.CharField(max_length=255)
+    rtn = models.CharField(max_length=20, blank=True, null=True)
+    direccion = models.CharField(max_length=255, blank=True, null=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
-    correo = models.CharField(max_length=150, blank=True, null=True)
+    correo = models.EmailField(max_length=150, blank=True, null=True)
 
     moneda = models.CharField(max_length=10, default="L")
-    isv_default = models.DecimalField(max_digits=5, decimal_places=2, default=0.15)  # 0.15 o 0.18
+    isv_default = models.DecimalField(max_digits=5, decimal_places=2, default=0.15)
     actualizado = models.DateTimeField(auto_now=True)
 
-    # Para que solo exista 1 registro
-    def save(self, *args, **kwargs):
-        self.pk = 1
-        super().save(*args, **kwargs)
-
     def __str__(self):
-        return "Configuración del negocio"
+        return f"Config {self.empresa.nombre}"
+
 
 
 class ModuloConfig(models.Model):
