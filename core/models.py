@@ -30,6 +30,12 @@ class Usuario(AbstractUser):
         related_name="usuarios"
     )
 
+    @staticmethod
+    def get_roles():
+        # Mantener por compatibilidad con migraciones viejas
+        return [(g.name.lower(), g.name) for g in Group.objects.all()]
+
+
     def __str__(self):
         return self.username
 

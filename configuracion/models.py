@@ -3,11 +3,19 @@ from django.db import models
 
 from core.models import Empresa
 
+
 class EmpresaConfig(models.Model):
-    empresa = models.OneToOneField(Empresa, on_delete=models.CASCADE, related_name="config")
+    empresa = models.OneToOneField(
+        Empresa,
+        on_delete=models.CASCADE,
+        related_name="config",
+        null=True,
+        blank=True
+    )
+
     nombre = models.CharField(max_length=150)
-    rtn = models.CharField(max_length=20, blank=True, null=True)
-    direccion = models.CharField(max_length=255, blank=True, null=True)
+    rtn = models.CharField(max_length=20)
+    direccion = models.CharField(max_length=255)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     correo = models.EmailField(max_length=150, blank=True, null=True)
 
@@ -16,7 +24,8 @@ class EmpresaConfig(models.Model):
     actualizado = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Config {self.empresa.nombre}"
+        return f"Config {self.nombre}"
+
 
 
 

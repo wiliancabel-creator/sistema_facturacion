@@ -10,8 +10,10 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.db.models import Q
 
-@login_required
+from core.decorators import requiere_modulo
 
+@login_required
+@requiere_modulo('mod_clientes')
 @permission_required('clientes.view_cliente', raise_exception=True)
 def listar_clientes(request):
     q = (request.GET.get('q') or '').strip()
@@ -39,7 +41,7 @@ def listar_clientes(request):
 
 
 @login_required
-
+@requiere_modulo('mod_clientes')
 @permission_required('clientes.add_cliente', raise_exception=True)
 def crear_cliente(request):
     if request.method == 'POST':
@@ -53,7 +55,7 @@ def crear_cliente(request):
 
 
 @login_required
-
+@requiere_modulo('mod_clientes')
 def buscar_clientes(request):
     term = request.GET.get('q', '')
     clientes = Cliente.objects.filter(nombre__icontains=term).values('id', 'nombre')[:20]
