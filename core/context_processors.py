@@ -1,33 +1,29 @@
-from configuracion.models import EmpresaConfig
+from configuracion.models import EmpresaConfig, ModuloConfig
 
 def empresa_config(request):
-    empresa = EmpresaConfig.objects.first()
+    # En /login/ no hay empresa seleccionada -> no crear nada
+    empresa = getattr(request, "empresa", None)
     if not empresa:
-        empresa = EmpresaConfig.objects.create(
-            nombre="Mi Empresa",
-            rtn="",
-            direccion="",
-        )
-    return {"empresa": empresa}
+        return {"empresa": None}
 
+    config, _ = EmpresaConfig.objects.get_or_create(
+        empresa=empresa,
+        defaults={
+            "nombre": empresa.nombre,
+            "rtn": "00000000000000",
+            "direccion": "Pendiente",
+        }
+    )
+    return {"empresa": config}
 
-from configuracion.models import ModuloConfig
 
 def modulos_config(request):
-    modulos = ModuloConfig.objects.first()
-    if not modulos:
-        modulos = ModuloConfig.objects.create()
+    empresa = getattr(request, "empresa", None)
+    if not empresa:
+        return {"modulos": None}
+
+    modulos, _ = ModuloConfig.objects.get_or_create(empresa=empresa)
     return {"modulos": modulos}
 
-
-
-from core.models import Empresa
-
-def empresas_para_superuser(request):
-    if request.user.is_authenticated and request.user.is_superuser:
-        return {
-            "empresas_selector": Empresa.objects.all().order_by("id")
-        }
-    return {"empresas_selector": []}
 
 
