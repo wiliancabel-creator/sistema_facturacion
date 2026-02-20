@@ -1,7 +1,12 @@
+from core.models import Empresa
 from configuracion.models import EmpresaConfig, ModuloConfig
 
+def empresas_para_superuser(request):
+    if request.user.is_authenticated and request.user.is_superuser:
+        return {"empresas_selector": Empresa.objects.all().order_by("id")}
+    return {"empresas_selector": []}
+
 def empresa_config(request):
-    # En /login/ no hay empresa seleccionada -> no crear nada
     empresa = getattr(request, "empresa", None)
     if not empresa:
         return {"empresa": None}
@@ -15,7 +20,6 @@ def empresa_config(request):
         }
     )
     return {"empresa": config}
-
 
 def modulos_config(request):
     empresa = getattr(request, "empresa", None)
