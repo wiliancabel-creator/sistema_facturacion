@@ -9,6 +9,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('graficos/', views.dashboard_graficos, name='dashboard_graficos'),
+    path("cambiar-empresa/<int:empresa_id>/", views.seleccionar_empresa, name="cambiar_empresa"),
 
     # # MODULOS (con prefijo)
     path('ventas/', include('ventas.urls')),

@@ -1,0 +1,66 @@
+{% comment %}
+Uso:
+  {% include "partials/pagination.html" with page_obj=page_obj %}
+Requiere:
+  page_obj
+Conserva filtros actuales (GET) removiendo page.
+{% endcomment %}
+
+{% if page_obj and page_obj.paginator.num_pages > 1 %}
+
+  {# Armamos la querystring base sin "page" #}
+  {% with request.GET.urlencode as qs %}
+    {% if qs %}
+      {% with qs|cut:'page='|cut:'&page=' as base_qs %}
+        {% if base_qs %}
+          {% with base_qs|add:'&' as base %}
+          {% endwith %}
+        {% else %}
+          {% with '' as base %}
+          {% endwith %}
+        {% endif %}
+      {% endwith %}
+    {% else %}
+      {% with '' as base %}
+      {% endwith %}
+    {% endif %}
+  {% endwith %}
+
+  <nav class="mt-3" aria-label="Paginación">
+    <ul class="pagination justify-content-center mb-0">
+
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?{{ base }}page=1">«</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?{{ base }}page={{ page_obj.previous_page_number }}">Anterior</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">«</span></li>
+        <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+      {% endif %}
+
+      <li class="page-item disabled">
+        <span class="page-link">
+          Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+        </span>
+      </li>
+
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?{{ base }}page={{ page_obj.next_page_number }}">Siguiente</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?{{ base }}page={{ page_obj.paginator.num_pages }}">»</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+        <li class="page-item disabled"><span class="page-link">»</span></li>
+      {% endif %}
+
+    </ul>
+  </nav>
+
+{% endif %}
+

@@ -12,7 +12,7 @@
     <th>Activo</th>
     <th>Acciones</th>
   </tr>
-  {% for e in empleados %}
+  {% for e in page_obj %}
   <tr>
     <td>{{ e.nombre }}</td>
     <td>{{ e.puesto }}</td>
@@ -25,4 +25,10 @@
   </tr>
   {% endfor %}
 </table>
+
+{% include "partials/pagination.html" with page_obj=page_obj %}
+
+</div>
+
+
 {% endblock %}

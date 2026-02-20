@@ -19,12 +19,16 @@ from django.http import JsonResponse
 from django.db import transaction
 from datetime import datetime
 from core.decorators import requiere_modulo
+from django.core.paginator import Paginator
 
 @login_required
 @requiere_modulo('mod_cotizaciones')
 @permission_required('cotizaciones.view_cotizacion', raise_exception=True)
 def lista_cotizaciones(request):
-    cotizaciones = Cotizacion.objects.select_related('cliente').all().order_by('-fecha')
+    cotizaciones = Cotizacion.objects.select_related('cliente').filter(
+    empresa=request.empresa
+    ).order_by('-fecha')
+
 
     desde = request.GET.get('desde', '')
     hasta = request.GET.get('hasta', '')
@@ -56,8 +60,11 @@ def lista_cotizaciones(request):
     if tipo_pago:
         cotizaciones = cotizaciones.filter(tipo_pago=tipo_pago)
 
+    paginator = Paginator(cotizaciones, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     return render(request, 'cotizaciones/lista_cotizaciones.html', {
-        'cotizaciones': cotizaciones,
+        'page_obj': page_obj,
         'f': {
             'desde': desde,
             'hasta': hasta,
@@ -72,17 +79,21 @@ def lista_cotizaciones(request):
 @requiere_modulo('mod_cotizaciones')
 @permission_required('cotizaciones.add_cotizacion', raise_exception=True)
 def crear_cotizacion(request):
-    DetalleCotizacionFormSet = formset_factory(
-        DetalleCotizacionForm, extra=0, can_delete=True, min_num=1, validate_min=True
-    )
+    DetalleCotizacionFormSet = formset_factory(DetalleCotizacionForm, extra=0, can_delete=True)
+    formset = DetalleCotizacionFormSet(request.POST or None, form_kwargs={'empresa': request.empresa})
+
+    
 
     if request.method == 'POST':
         cotizacion_form = CotizacionForm(request.POST)
         formset = DetalleCotizacionFormSet(request.POST)
 
         # cliente por hidden input
-        cliente_id = (request.POST.get('cliente') or '').strip()
-        cliente = Cliente.objects.filter(id=cliente_id).first() if cliente_id.isdigit() else None
+        cliente = None
+        cliente_id = request.POST.get('cliente_id', '')
+        if cliente_id.isdigit():
+            cliente = Cliente.objects.filter(id=cliente_id, empresa=request.empresa).first()
+
 
         forms_validos = [
             f for f in formset
@@ -96,6 +107,7 @@ def crear_cotizacion(request):
             try:
                 with transaction.atomic():
                     cotizacion = cotizacion_form.save(commit=False)
+                    cotizacion.empresa = request.empresa
                     cotizacion.cliente = cliente
 
                     # init totales
@@ -115,11 +127,16 @@ def crear_cotizacion(request):
 
                     for form in forms_validos:
                         producto = form.cleaned_data['producto']
+                        producto = Producto.objects.filter(id=producto.id, empresa=request.empresa, activo=True).first()
+                        if not producto:
+                            raise ValueError("Producto inválido para esta empresa.")
+
                         cantidad = form.cleaned_data['cantidad']
                         precio_unitario = form.cleaned_data.get('precio_unitario') or producto.precio
                         descuento = form.cleaned_data.get('descuento', 0)
 
                         detalle = DetalleCotizacion.objects.create(
+                            empresa=request.empresa,
                             cotizacion=cotizacion,
                             producto=producto,
                             cantidad=cantidad,
@@ -177,7 +194,8 @@ def crear_cotizacion(request):
 @requiere_modulo('mod_cotizaciones')
 @permission_required('cotizaciones.change_cotizacion', raise_exception=True)
 def editar_cotizacion(request, cotizacion_id):
-    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, empresa=request.empresa)
+
 
     if getattr(cotizacion, 'estado', '') == 'facturada':
         messages.warning(request, "⚠️ Esta cotización ya fue facturada y no se puede editar.")
@@ -235,7 +253,8 @@ def editar_cotizacion(request, cotizacion_id):
                     cotizacion.save()
 
                     # borrar detalles anteriores
-                    cotizacion.detalles.all().delete()
+                    cotizacion.detalles.filter(empresa=request.empresa).delete()
+
 
                     subtotal_exento = Decimal('0.00')
                     subtotal_g15 = Decimal('0.00')
@@ -316,7 +335,7 @@ def editar_cotizacion(request, cotizacion_id):
 @requiere_modulo('mod_cotizaciones')
 @permission_required('ventas.add_venta', raise_exception=True)
 def facturar_cotizacion(request, cotizacion_id):
-    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, empresa=request.empresa)
 
     if cotizacion.estado == 'facturada':
         # si ya está facturada, solo redirige al resumen de ventas o lista cotizaciones
@@ -331,8 +350,9 @@ def facturar_cotizacion(request, cotizacion_id):
 @login_required
 @permission_required('cotizaciones.view_cotizacion', raise_exception=True)
 def detalle_cotizacion(request, cotizacion_id):
-    cotizacion = get_object_or_404(Cotizacion, pk=cotizacion_id)
-    empresa = EmpresaConfig.objects.first()
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, empresa=request.empresa)
+    empresa = EmpresaConfig.objects.filter(empresa=request.empresa).first()
+
 
     return render(request, 'cotizaciones/detalle_cotizacion.html', {
         'cotizacion': cotizacion,
@@ -342,7 +362,7 @@ def detalle_cotizacion(request, cotizacion_id):
 @login_required
 @permission_required('core.delete_cotizacion', raise_exception=True)
 def eliminar_cotizacion(request, cotizacion_id):
-    cotizacion = get_object_or_404(Cotizacion, pk=cotizacion_id)
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, empresa=request.empresa)
 
     try:
         cotizacion.delete()
@@ -354,6 +374,7 @@ def eliminar_cotizacion(request, cotizacion_id):
 
 
 @login_required
+@requiere_modulo('mod_ventas')
 @permission_required('productos.view_producto', raise_exception=True)
 def buscar_producto(request):
     """
@@ -369,19 +390,19 @@ def buscar_producto(request):
     try:
         # 1. Buscar por ID numérico
         if codigo.isdigit():
-            producto = Producto.objects.filter(id=int(codigo), activo=True).first()
+            producto = Producto.objects.filter(id=int(codigo),empresa=request.empresa,activo=True).first()
 
         # 2. Buscar por código de barra
         if not producto:
-            producto = Producto.objects.filter(codigo_barra=codigo, activo=True).first()
+            producto = Producto.objects.filter(codigo_barra=codigo,empresa=request.empresa,activo=True).first()
 
         # 3. Buscar por código interno
         if not producto:
-            producto = Producto.objects.filter(codigo=codigo, activo=True).first()
+            producto = Producto.objects.filter(codigo=codigo,empresa=request.empresa, activo=True).first()
 
         # 4. Buscar por nombre parcial
         if not producto:
-            producto = Producto.objects.filter(nombre__icontains=codigo, activo=True).first()
+            producto = Producto.objects.filter(nombre__icontains=codigo,empresa=request.empresa, activo=True).first()
 
         if producto:
             return JsonResponse({
@@ -419,7 +440,7 @@ def buscar_producto_id(request):
         return JsonResponse({'encontrado': False, 'error': 'ID inválido'})
     
     try:
-        producto = Producto.objects.get(id=int(producto_id), activo=True)
+        producto = Producto.objects.get(id=int(producto_id),empresa=request.empresa,activo=True)
         return JsonResponse({
             'encontrado': True,
             'id': producto.id,
@@ -432,4 +453,4 @@ def buscar_producto_id(request):
     except Producto.DoesNotExist:
         return JsonResponse({'encontrado': False, 'error': 'Producto no encontrado'})
     except Exception as e:
-        return JsonResponse({'encontrado': False, 'error': str(e)})    
+        return JsonResponse({'encontrado': False, 'error': str(e)})     

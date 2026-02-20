@@ -10,16 +10,15 @@ from core.decorators import requiere_modulo
 from caja.models import Caja, CajaSesion, CajaMovimiento
 
 
-def _totales_pagos_por_metodo(desde_dt, hasta_dt):
-    """
-    Suma pagos por método en el rango de fechas usando relación venta__fecha.
-    """
-    from ventas.models import Pago  # importa aquí para evitar ciclos si fuera el caso
+def _totales_pagos_por_metodo(empresa, desde_dt, hasta_dt):
+    from ventas.models import Pago
 
-    qs = (Pago.objects  
-          .filter(venta__fecha__gte=desde_dt, venta__fecha__lte=hasta_dt)
-          .values('metodo')
-          .annotate(total=Sum('monto')))
+    qs = (
+        Pago.objects
+        .filter(empresa=empresa, venta__fecha__gte=desde_dt, venta__fecha__lte=hasta_dt)
+        .values('metodo')
+        .annotate(total=Sum('monto'))
+    )
 
     tot = {'efectivo': Decimal('0.00'), 'tarjeta': Decimal('0.00'),
            'transferencia': Decimal('0.00'), 'otro': Decimal('0.00')}
@@ -30,14 +29,16 @@ def _totales_pagos_por_metodo(desde_dt, hasta_dt):
     return tot
 
 
+
 @login_required
 @requiere_modulo('mod_caja')
 @permission_required('caja.add_cajasesion', raise_exception=True)
 def abrir_caja(request):
-    caja = Caja.objects.filter(activa=True).first() or Caja.objects.create(nombre="Caja Principal", activa=True)
+    caja = Caja.objects.filter(empresa=request.empresa, activa=True).first()
+    if not caja:
+        caja = Caja.objects.create(empresa=request.empresa, nombre="Caja Principal", activa=True)
 
-    # no permitir 2 sesiones abiertas para el mismo cajero (o para la misma caja, tú decides)
-    sesion_abierta = CajaSesion.objects.filter(caja=caja, estado='abierta').first()
+    sesion_abierta = CajaSesion.objects.filter(empresa=request.empresa, caja=caja, estado='abierta').first()
     if sesion_abierta:
         messages.warning(request, '⚠️ Ya hay una caja abierta.')
         return redirect('caja:panel_caja', sesion_id=sesion_abierta.id)
@@ -50,6 +51,7 @@ def abrir_caja(request):
             monto = Decimal('0.00')
 
         sesion = CajaSesion.objects.create(
+            empresa=request.empresa,
             caja=caja,
             cajero=request.user,
             monto_apertura=monto
@@ -60,11 +62,13 @@ def abrir_caja(request):
     return render(request, 'caja/abrir_caja.html', {'caja': caja})
 
 
+
 @login_required
 @requiere_modulo('mod_caja')
 @permission_required('caja.view_cajasesion', raise_exception=True)
 def panel_caja(request, sesion_id):
-    sesion = get_object_or_404(CajaSesion, id=sesion_id)
+    sesion = get_object_or_404(CajaSesion, id=sesion_id, empresa=request.empresa)
+
     if sesion.estado != 'abierta':
         return redirect('caja:detalle_cierre', sesion_id=sesion.id)
 
@@ -83,6 +87,7 @@ def panel_caja(request, sesion_id):
             messages.error(request, '❌ Movimiento inválido.')
         else:
             CajaMovimiento.objects.create(
+                empresa=request.empresa,
                 sesion=sesion,
                 tipo=tipo,
                 concepto=concepto,
@@ -94,7 +99,8 @@ def panel_caja(request, sesion_id):
 
     # totales actuales en vivo
     ahora = timezone.now()
-    tot_pagos = _totales_pagos_por_metodo(sesion.fecha_apertura, ahora)
+    tot_pagos = _totales_pagos_por_metodo(request.empresa, sesion.fecha_apertura, ahora)
+
 
     ingresos = sesion.movimientos.filter(tipo='ingreso').aggregate(s=Sum('monto'))['s'] or Decimal('0.00')
     egresos = sesion.movimientos.filter(tipo='egreso').aggregate(s=Sum('monto'))['s'] or Decimal('0.00')
@@ -116,13 +122,13 @@ def panel_caja(request, sesion_id):
 @requiere_modulo('mod_caja')
 @permission_required('caja.change_cajasesion', raise_exception=True)
 def cerrar_caja(request, sesion_id):
-    sesion = get_object_or_404(CajaSesion, id=sesion_id)
+    sesion = get_object_or_404(CajaSesion, id=sesion_id, empresa=request.empresa)
 
     if sesion.estado != 'abierta':
         return redirect('caja:detalle_cierre', sesion_id=sesion.id)
 
     ahora = timezone.now()
-    tot_pagos = _totales_pagos_por_metodo(sesion.fecha_apertura, ahora)
+    tot_pagos = _totales_pagos_por_metodo(request.empresa, sesion.fecha_apertura, ahora)
     ingresos = sesion.movimientos.filter(tipo='ingreso').aggregate(s=Sum('monto'))['s'] or Decimal('0.00')
     egresos = sesion.movimientos.filter(tipo='egreso').aggregate(s=Sum('monto'))['s'] or Decimal('0.00')
     efectivo_teorico = (sesion.monto_apertura + tot_pagos['efectivo'] + ingresos - egresos).quantize(Decimal('0.01'))
@@ -173,7 +179,8 @@ def cerrar_caja(request, sesion_id):
 @requiere_modulo('mod_caja')
 @permission_required('caja.view_cajasesion', raise_exception=True)
 def detalle_cierre(request, sesion_id):
-    sesion = get_object_or_404(CajaSesion, id=sesion_id)
+    sesion = get_object_or_404(CajaSesion, id=sesion_id, empresa=request.empresa)
+
     return render(request, 'caja/detalle_cierre.html', {'sesion': sesion})
 
 
@@ -183,12 +190,13 @@ def detalle_cierre(request, sesion_id):
 @requiere_modulo('mod_caja')
 @permission_required('caja.view_cajasesion', raise_exception=True)
 def ticket_cierre(request, sesion_id):
-    sesion = get_object_or_404(CajaSesion, id=sesion_id)
+    sesion = get_object_or_404(CajaSesion, id=sesion_id, empresa=request.empresa)
+
     return render(request, 'caja/ticket_cierre.html', {'sesion': sesion})
 
 
 from django.db.models import Q
-
+from django.core.paginator import Paginator
 @login_required
 @requiere_modulo('mod_caja')
 @permission_required('caja.view_cajasesion', raise_exception=True)  # si está en core: 'core.view_cajasesion'
@@ -198,7 +206,8 @@ def historial_cajas(request):
     desde = request.GET.get('desde') or ''
     hasta = request.GET.get('hasta') or ''
 
-    sesiones = CajaSesion.objects.all().order_by('-fecha_apertura')
+    sesiones = CajaSesion.objects.filter(empresa=request.empresa).order_by('-fecha_apertura')
+
 
     if estado:
         sesiones = sesiones.filter(estado=estado)
@@ -217,8 +226,12 @@ def historial_cajas(request):
             Q(caja__nombre__icontains=q)
         )
 
+    paginator = Paginator(sesiones, 2)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     return render(request, 'caja/historial_cajas.html', {
-        'sesiones': sesiones,
+        'page_obj': page_obj,
+        
         'f': {'q': q, 'estado': estado, 'desde': desde, 'hasta': hasta}
     })
 
@@ -227,5 +240,6 @@ def historial_cajas(request):
 @requiere_modulo('mod_caja')
 @permission_required('caja.view_cajasesion', raise_exception=True)  # si está en core: 'core.view_cajasesion'
 def ver_cierre(request, sesion_id):
-    sesion = get_object_or_404(CajaSesion, id=sesion_id)
+    sesion = get_object_or_404(CajaSesion, id=sesion_id, empresa=request.empresa)
+
     return render(request, 'caja/ver_cierre.html', {'sesion': sesion})

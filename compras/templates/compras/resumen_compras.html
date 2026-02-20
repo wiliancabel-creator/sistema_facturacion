@@ -78,7 +78,7 @@
     </tr>
   </thead>
   <tbody>
-    {% for compra in compras %}
+    {% for compra in page_obj %}
     <tr>
       <td>{{ compra.fecha }}</td>
       <td>{{ compra.proveedor.nombre }}</td>
@@ -92,6 +92,8 @@
     {% endfor %}
   </tbody>
 </table>
+
+{% include "partials/pagination.html" with page_obj=page_obj %}
 
 </div>
 

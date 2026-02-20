@@ -26,6 +26,25 @@
           </div>
           <div class="card-body">
             
+             <!-- Buscador de productos dinámico -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">🔍 Buscar Producto</label>
+              <div class="autocomplete-container">
+                <div class="input-group">
+                  <input type="text" id="producto-input" class="form-control" placeholder="Buscar por código o nombre..." autocomplete="off">
+                  <button type="button" class="btn btn-success" id="btn-nuevo-producto" title="Agregar nuevo producto">
+                    ➕
+                  </button>
+                </div>
+                <div id="producto-suggestions" class="autocomplete-suggestions"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+          
+
             <!-- Proveedor con buscador dinámico -->
             <div class="mb-3 autocomplete-container">
               <label class="form-label fw-bold">🏢 Proveedor *</label>
@@ -68,22 +87,7 @@
 
             <hr>
 
-            <!-- Buscador de productos dinámico -->
-            <div class="mb-3">
-              <label class="form-label fw-bold">🔍 Buscar Producto</label>
-              <div class="autocomplete-container">
-                <div class="input-group">
-                  <input type="text" id="producto-input" class="form-control" placeholder="Buscar por código o nombre..." autocomplete="off">
-                  <button type="button" class="btn btn-success" id="btn-nuevo-producto" title="Agregar nuevo producto">
-                    ➕
-                  </button>
-                </div>
-                <div id="producto-suggestions" class="autocomplete-suggestions"></div>
-              </div>
-            </div>
-
-          </div>
-        </div>
+           
 
         <!-- Resumen de Totales -->
         <div class="card shadow-sm mt-3">

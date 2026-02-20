@@ -9,7 +9,7 @@ from proveedores.models import Proveedor
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth import authenticate, login
 from django.http import JsonResponse
-
+from django.core.paginator import Paginator
 
 @login_required
 @permission_required('proveedores.add_proveedor', raise_exception=True)
@@ -17,25 +17,29 @@ def registrar_proveedor(request):
     if request.method == 'POST':
         form = ProveedorForm(request.POST)
         if form.is_valid():
-            form.save()
+            prov = form.save(commit=False)
+            prov.empresa = request.empresa  # ✅ MULTI-TENANT
+            prov.save()
             return redirect('proveedores:lista_proveedores')
     else:
         form = ProveedorForm()
     return render(request, 'proveedores/registrar.html', {'form': form})
 
+
 @login_required
 @permission_required('proveedores.view_proveedor', raise_exception=True)
 def lista_proveedores(request):
-    proveedores = Proveedor.objects.all()
-    return render(request, 'proveedores/lista.html', {'proveedores': proveedores})
+    proveedores = Proveedor.objects.filter(empresa=request.empresa).order_by('nombre')
+    
+    paginator = Paginator(proveedores, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    
+    return render(request, 'proveedores/lista.html', {'page_obj': page_obj})
+
 
 
 @login_required
 def buscar_proveedor(request):
-    """
-    Busca proveedor por ID, RTN, nombre parcial, teléfono o correo.
-    Devuelve JSON para autocompletar formularios.
-    """
     q = request.GET.get('q', '').strip()
 
     if not q:
@@ -44,25 +48,22 @@ def buscar_proveedor(request):
     proveedor = None
 
     try:
-        # 1. Buscar por ID numérico
+        base = Proveedor.objects.filter(activo=True, empresa=request.empresa)
+
         if q.isdigit():
-            proveedor = Proveedor.objects.filter(id=int(q), activo=True).first()
+            proveedor = base.filter(id=int(q)).first()
 
-        # 2. Buscar por RTN exacto
         if not proveedor:
-            proveedor = Proveedor.objects.filter(rtn=q, activo=True).first()
+            proveedor = base.filter(rtn=q).first()
 
-        # 3. Buscar por teléfono
         if not proveedor:
-            proveedor = Proveedor.objects.filter(telefono__icontains=q, activo=True).first()
+            proveedor = base.filter(telefono__icontains=q).first()
 
-        # 4. Buscar por correo
         if not proveedor:
-            proveedor = Proveedor.objects.filter(correo__icontains=q, activo=True).first()
+            proveedor = base.filter(correo__icontains=q).first()
 
-        # 5. Buscar por nombre parcial
         if not proveedor:
-            proveedor = Proveedor.objects.filter(nombre__icontains=q, activo=True).first()
+            proveedor = base.filter(nombre__icontains=q).first()
 
         if proveedor:
             return JsonResponse({
@@ -80,3 +81,4 @@ def buscar_proveedor(request):
 
     except Exception as e:
         return JsonResponse({'encontrado': False, 'error': f'Error: {str(e)}'})
+

@@ -84,15 +84,17 @@ ROOT_URLCONF = 'sistema_base.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                "core.context_processors.empresas_para_superuser",
                 'core.context_processors.empresa_config',
                 'core.context_processors.modulos_config',
+                
 
 
             ],   

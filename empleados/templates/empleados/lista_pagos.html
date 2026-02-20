@@ -9,7 +9,7 @@
     <th>Monto</th>
     <th>Descripción</th>
   </tr>
-  {% for p in pagos %}
+  {% for p in page_obj %}
   <tr>
     <td>{{ p.empleado.nombre }}</td>
     <td>{{ p.fecha_pago }}</td>
@@ -18,4 +18,7 @@
   </tr>
   {% endfor %}
 </table>
+
+{% include "partials/pagination.html" with page_obj=page_obj %}
+</div>
 {% endblock %}

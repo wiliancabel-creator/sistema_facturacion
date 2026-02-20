@@ -18,3 +18,16 @@ def modulos_config(request):
     if not modulos:
         modulos = ModuloConfig.objects.create()
     return {"modulos": modulos}
+
+
+
+from core.models import Empresa
+
+def empresas_para_superuser(request):
+    if request.user.is_authenticated and request.user.is_superuser:
+        return {
+            "empresas_selector": Empresa.objects.all().order_by("id")
+        }
+    return {"empresas_selector": []}
+
+

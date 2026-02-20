@@ -1,20 +1,27 @@
-from django.shortcuts import redirect
-from django.urls import reverse
+from core.models import Empresa
 
 class CurrentEmpresaMiddleware:
+    """
+    - Usuario normal: usa request.user.empresa
+    - Superuser: si hay empresa_id en sesión, usa esa (para poder "cambiar empresa")
+    """
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
         request.empresa = None
-        user = getattr(request, "user", None)
 
-        if user and user.is_authenticated:
-            request.empresa = getattr(user, "empresa", None)
+        if request.user.is_authenticated:
+            # 1) Superuser: empresa seleccionada en sesión
+            if request.user.is_superuser:
+                empresa_id = request.session.get("empresa_id")
+                if empresa_id:
+                    request.empresa = Empresa.objects.filter(id=empresa_id).first()
 
-            # ✅ Si está logueado pero no tiene empresa, lo mandamos a login
-            # (o podrías mostrar un mensaje, pero esto evita errores en módulos)
-            if request.empresa is None and request.path not in [reverse('logout'), reverse('login')]:
-                return redirect('logout')
+            # 2) Usuario normal: empresa del usuario
+            if request.empresa is None:
+                request.empresa = getattr(request.user, "empresa", None)
 
         return self.get_response(request)
+
+

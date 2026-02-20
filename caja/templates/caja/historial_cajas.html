@@ -47,7 +47,8 @@
           </tr>
         </thead>
         <tbody>
-          {% for s in sesiones %}
+          {% for s in page_obj %}
+
           <tr>
             <td>{{ s.id }}</td>
             <td>{{ s.caja.nombre }}</td>
@@ -73,7 +74,12 @@
           {% endfor %}
         </tbody>
       </table>
+      {% include "partials/pagination.html" with page_obj=page_obj %}
     </div>
   </div>
 </div>
+
 {% endblock %}
+
+
+

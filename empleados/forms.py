@@ -1,8 +1,6 @@
 from django import forms
 from empleados.models import Empleado, PagoEmpleado
 
-
-
 class EmpleadoForm(forms.ModelForm):
     class Meta:
         model = Empleado
@@ -26,3 +24,12 @@ class PagoEmpleadoForm(forms.ModelForm):
             'monto': forms.NumberInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
+
+    def __init__(self, *args, **kwargs):
+        empresa = kwargs.pop('empresa', None)
+        super().__init__(*args, **kwargs)
+        if empresa:
+            self.fields['empleado'].queryset = Empleado.objects.filter(
+                empresa=empresa,
+                activo=True
+            ).order_by('nombre')

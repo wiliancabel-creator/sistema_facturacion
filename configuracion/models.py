@@ -8,9 +8,7 @@ class EmpresaConfig(models.Model):
     empresa = models.OneToOneField(
         Empresa,
         on_delete=models.CASCADE,
-        related_name="config",
-        null=True,
-        blank=True
+        related_name="config"
     )
 
     nombre = models.CharField(max_length=150)
@@ -29,27 +27,28 @@ class EmpresaConfig(models.Model):
 
 
 
+from django.db import models
+from core.models import Empresa
+
 class ModuloConfig(models.Model):
-    # ventas
+    empresa = models.OneToOneField(
+        Empresa,
+        on_delete=models.CASCADE,
+        related_name="modulos"
+    )
+
     mod_ventas = models.BooleanField(default=True)
     mod_cotizaciones = models.BooleanField(default=True)
 
-    # inventario/productos
     mod_productos = models.BooleanField(default=True)
     mod_compras = models.BooleanField(default=True)
+    mod_clientes = models.BooleanField(default=True)
+    mod_proveedores = models.BooleanField(default=True)
 
-    # cartera
     mod_cuentas = models.BooleanField(default=True)
 
-    # extras
     mod_empleados = models.BooleanField(default=True)
     mod_cai = models.BooleanField(default=True)
-    mod_reportes = models.BooleanField(default=True) # este modulo falta
-    mod_caja = models.BooleanField(default=True) # NUEVO MÓDULO CAJA
+    mod_reportes = models.BooleanField(default=True)
+    mod_caja = models.BooleanField(default=True)
 
-    def save(self, *args, **kwargs):
-        self.pk = 1
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return "Módulos activos"

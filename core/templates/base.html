@@ -23,7 +23,7 @@
 
       <!-- Nombre dinámico de la empresa -->
       <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">
-        🛍️ {{ empresa.nombre|default:"SISTEMAS FAJARDO" }}
+        🛍️ {{ request.empresa.nombre|default:"SISTEMAS FAJARDO" }}
       </a>
 
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -81,6 +81,30 @@
 
         <!-- DERECHA -->
         <ul class="navbar-nav ms-auto align-items-center">
+        
+                {% if user.is_authenticated and user.is_superuser %}
+        <li class="nav-item dropdown me-2">
+          <a class="btn btn-outline-info btn-sm dropdown-toggle"
+            href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            🏢 {{ request.empresa.nombre|default:"Seleccionar empresa" }}
+          </a>
+
+          <ul class="dropdown-menu dropdown-menu-end">
+            {% for e in empresas_selector %}
+              <li>
+                <a class="dropdown-item {% if request.empresa and request.empresa.id == e.id %}active{% endif %}"
+                  href="{% url 'cambiar_empresa' e.id %}">
+                  {{ e.nombre }}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </li>
+        {% endif %}
+ 
+          
+
+
 
           <!-- Botón Cambiar Tema -->
           <li class="nav-item me-2">
@@ -125,8 +149,6 @@
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
 
 
 
@@ -173,7 +195,5 @@ toggleBtn.addEventListener('click', () => {
   
   </script>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -28,18 +28,18 @@ from django.http import JsonResponse
 def dashboard(request):
     hoy = timezone.localdate()
 
-    ventas_hoy = Venta.objects.filter(fecha__date=hoy).aggregate(total=Sum('total'))['total'] or 0
-    compras_hoy = Compra.objects.filter(fecha__date=hoy).aggregate(total=Sum('total'))['total'] or 0
+    ventas_hoy = Venta.objects.filter(empresa=request.empresa,fecha__date=hoy).aggregate(total=Sum('total'))['total'] or 0
+    compras_hoy = Compra.objects.filter(empresa=request.empresa,fecha__date=hoy).aggregate(total=Sum('total'))['total'] or 0
 
-    productos_vendidos_hoy = DetalleVenta.objects.filter(venta__fecha__date=hoy).aggregate(cantidad=Sum('cantidad'))['cantidad'] or 0
-    productos_comprados_hoy = DetalleCompra.objects.filter(compra__fecha__date=hoy).aggregate(cantidad=Sum('cantidad'))['cantidad'] or 0
+    productos_vendidos_hoy = DetalleVenta.objects.filter(venta__empresa=request.empresa, venta__fecha__date=hoy).aggregate(cantidad=Sum('cantidad'))['cantidad'] or 0
+    productos_comprados_hoy = DetalleCompra.objects.filter(compra__empresa=request.empresa, compra__fecha__date=hoy).aggregate(cantidad=Sum('cantidad'))['cantidad'] or 0
 
-    total_ventas = Venta.objects.aggregate(total=Sum('total'))['total'] or 0
-    total_compras = Compra.objects.aggregate(total=Sum('total'))['total'] or 0
+    total_ventas = Venta.objects.filter(empresa=request.empresa).aggregate(total=Sum('total'))['total'] or 0
+    total_compras = Compra.objects.filter(empresa=request.empresa).aggregate(total=Sum('total'))['total'] or 0
 
-    total_productos = Producto.objects.count()
-    total_clientes = Cliente.objects.count()
-    total_proveedores = Proveedor.objects.count()
+    total_productos = Producto.objects.filter(empresa=request.empresa).count()
+    total_clientes = Cliente.objects.filter(empresa=request.empresa).count()
+    total_proveedores = Proveedor.objects.filter(empresa=request.empresa).count()
 
     context = {
         'ventas_hoy': ventas_hoy,
@@ -137,6 +137,18 @@ def login_view(request):
 
     return render(request, 'auth/login.html')
     
+from django.shortcuts import redirect, get_object_or_404
+from core.models import Empresa
+
+@login_required
+def seleccionar_empresa(request, empresa_id):
+    if not request.user.is_superuser:
+        return redirect("dashboard")
+
+    empresa = get_object_or_404(Empresa, id=empresa_id)
+    request.session["empresa_id"] = empresa.id
+    return redirect("dashboard")
+
 
 
 
@@ -145,11 +157,12 @@ from proveedores.forms import ProveedorForm
 
 @login_required
 def crear_producto_ajax(request):
-    """Crear producto desde modal en compras"""
     if request.method == 'POST':
         form = ProductoForm(request.POST)
         if form.is_valid():
-            producto = form.save()
+            producto = form.save(commit=False)
+            producto.empresa = request.empresa  # ✅ MULTI-TENANT
+            producto.save()
             return JsonResponse({
                 'success': True,
                 'producto': {
@@ -160,21 +173,20 @@ def crear_producto_ajax(request):
                     'tipo_impuesto': producto.tipo_impuesto,
                 }
             })
-        else:
-            return JsonResponse({
-                'success': False,
-                'errors': form.errors
-            })
+        return JsonResponse({'success': False, 'errors': form.errors})
+
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
 
 
 @login_required
 def crear_proveedor_ajax(request):
-    """Crear proveedor desde modal en compras"""
     if request.method == 'POST':
         form = ProveedorForm(request.POST)
         if form.is_valid():
-            proveedor = form.save()
+            proveedor = form.save(commit=False)
+            proveedor.empresa = request.empresa  # ✅ MULTI-TENANT
+            proveedor.save()
             return JsonResponse({
                 'success': True,
                 'proveedor': {
@@ -182,62 +194,87 @@ def crear_proveedor_ajax(request):
                     'nombre': proveedor.nombre,
                 }
             })
-        else:
-            return JsonResponse({
-                'success': False,
-                'errors': form.errors
-            })
+        return JsonResponse({'success': False, 'errors': form.errors})
+
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
 
 
 @login_required
+def crear_cliente_ajax(request):
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        rtn = request.POST.get('rtn', '').strip()
+        telefono = request.POST.get('telefono', '').strip()
+        direccion = request.POST.get('direccion', '').strip()
+
+        if not nombre:
+            return JsonResponse({'success': False, 'error': 'El nombre es obligatorio'})
+
+        try:
+            cliente = Cliente.objects.create(
+                empresa=request.empresa,   # ✅ MULTI-TENANT
+                nombre=nombre,
+                rtn=rtn if rtn else None,
+                telefono=telefono if telefono else None,
+                direccion=direccion if direccion else None
+            )
+            return JsonResponse({'success': True, 'cliente': {'id': cliente.id, 'nombre': cliente.nombre}})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+
+
+@login_required
 def sugerencias_proveedores(request):
-    """Devuelve sugerencias de proveedores para autocompletado"""
     query = request.GET.get('q', '').strip()
-    
+
     if len(query) < 2:
         return JsonResponse({'proveedores': []})
-    
+
     try:
         proveedores = Proveedor.objects.filter(
+            empresa=request.empresa,   # ✅ MULTI-TENANT
             activo=True,
             nombre__icontains=query
         )[:10]
-        
+
         resultados = [{
             'id': p.id,
             'nombre': p.nombre,
             'rtn': p.rtn or '',
         } for p in proveedores]
-        
+
         return JsonResponse({'proveedores': resultados})
-        
+
     except Exception as e:
         return JsonResponse({'proveedores': [], 'error': str(e)})
 
 
 
-from .models import models
+
+from .models import Empresa
+from django.db.models import Q
+
 @login_required
 def sugerencias_productos(request):
-    """
-    Devuelve sugerencias de productos mientras el usuario escribe.
-    """
     query = request.GET.get('q', '').strip()
-    
-    if len(query) < 2:  # Solo buscar si escribe al menos 2 caracteres
+
+    if len(query) < 2:
         return JsonResponse({'productos': []})
-    
+
     try:
-        # Buscar en código, código de barra y nombre
         productos = Producto.objects.filter(
+            empresa=request.empresa,   # ✅ MULTI-TENANT
             activo=True
         ).filter(
-            models.Q(codigo__icontains=query) |
-            models.Q(codigo_barra__icontains=query) |
-            models.Q(nombre__icontains=query)
-        )[:10]  # Máximo 10 sugerencias
-        
+            Q(codigo__icontains=query) |
+            Q(codigo_barra__icontains=query) |
+            Q(nombre__icontains=query)
+        )[:10]
+
         resultados = [{
             'id': p.id,
             'codigo': p.codigo,
@@ -246,79 +283,42 @@ def sugerencias_productos(request):
             'precio': str(p.precio),
             'stock': p.stock,
             'tipo_impuesto': p.tipo_impuesto,
-            'display': f"{p.codigo} - {p.nombre} (Stock: {p.stock})"  # Texto para mostrar
+            'display': f"{p.codigo} - {p.nombre} (Stock: {p.stock})"
         } for p in productos]
-        
+
         return JsonResponse({'productos': resultados})
-        
+
     except Exception as e:
         return JsonResponse({'productos': [], 'error': str(e)})
-  
-  
-    
-    
-@login_required
-def crear_cliente_ajax(request):
-    """Crear cliente desde modal en ventas"""
-    if request.method == 'POST':
-        nombre = request.POST.get('nombre', '').strip()
-        rtn = request.POST.get('rtn', '').strip()
-        telefono = request.POST.get('telefono', '').strip()
-        direccion = request.POST.get('direccion', '').strip()
-        
-        if not nombre:
-            return JsonResponse({
-                'success': False,
-                'error': 'El nombre es obligatorio'
-            })
-        
-        try:
-            cliente = Cliente.objects.create(
-                nombre=nombre,
-                rtn=rtn if rtn else None,
-                telefono=telefono if telefono else None,
-                direccion=direccion if direccion else None
-            )
-            return JsonResponse({
-                'success': True,
-                'cliente': {
-                    'id': cliente.id,
-                    'nombre': cliente.nombre,
-                }
-            })
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            })
-    
-    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+
 
 
 @login_required
 def sugerencias_clientes(request):
-    """Devuelve sugerencias de clientes para autocompletado"""
     query = request.GET.get('q', '').strip()
-    
+
     if len(query) < 2:
         return JsonResponse({'clientes': []})
-    
+
     try:
-        from django.db.models import Q
         clientes = Cliente.objects.filter(
+            empresa=request.empresa,   # ✅ MULTI-TENANT
+        ).filter(
             Q(nombre__icontains=query) |
             Q(rtn__icontains=query) |
             Q(telefono__icontains=query)
         )[:10]
-        
+
         resultados = [{
             'id': c.id,
             'nombre': c.nombre,
             'rtn': c.rtn or '',
             'telefono': c.telefono or '',
         } for c in clientes]
-        
+
         return JsonResponse({'clientes': resultados})
-        
+
     except Exception as e:
         return JsonResponse({'clientes': [], 'error': str(e)})

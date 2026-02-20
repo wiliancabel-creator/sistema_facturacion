@@ -21,7 +21,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for proveedor in proveedores %}
+      {% for proveedor in page_obj %}
         <tr>
           <td>{{ proveedor.id }}</td>
           <td>{{ proveedor.nombre }}</td>
@@ -37,6 +37,8 @@
       {% endfor %}
     </tbody>
   </table>
+
+  {% include "partials/pagination.html" with page_obj=page_obj %}
 
 </div>
 

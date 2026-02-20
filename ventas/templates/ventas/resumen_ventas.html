@@ -76,7 +76,7 @@
     </tr>
   </thead>
   <tbody>
-    {% for venta in ventas %}
+    {% for venta in page_obj %}
     <tr>
       <td>{{ venta.fecha }}</td>
       <td>{{ venta.cliente.nombre }}</td>
@@ -91,6 +91,8 @@
   </tbody>
 </table>
 
+{% include "partials/pagination.html" with page_obj=page_obj %}
+</div>
 <script>
 // ========== BUSCADOR DINÁMICO DE CLIENTES (LISTA DE VENTAS) ==========
 document.addEventListener("DOMContentLoaded", function () {

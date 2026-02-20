@@ -1,11 +1,13 @@
-# core/models.py - VERSIÓN CORREGIDA
 from django.db import models
+from core.models import Empresa
 
-
-
-
-# ============= PROVEEDOR MEJORADO =============
 class Proveedor(models.Model):
+    empresa = models.ForeignKey(
+        Empresa,
+        on_delete=models.PROTECT,
+        related_name="proveedores"
+    )
+
     nombre = models.CharField(max_length=200, verbose_name="Nombre/Razón Social")
     rtn = models.CharField(max_length=20, blank=True, null=True, verbose_name="RTN")
     direccion = models.TextField(blank=True)
@@ -18,6 +20,10 @@ class Proveedor(models.Model):
     class Meta:
         ordering = ['nombre']
         verbose_name_plural = "Proveedores"
+        # ✅ evita choques por empresa (elige lo que te convenga)
+        constraints = [
+            models.UniqueConstraint(fields=['empresa', 'nombre'], name='uniq_proveedor_nombre_por_empresa'),
+        ]
 
     def __str__(self):
         return self.nombre

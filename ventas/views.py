@@ -39,7 +39,7 @@ from caja.decorators import requiere_caja_abierta
 @requiere_modulo('mod_ventas')
 @permission_required('ventas.add_venta', raise_exception=True)
 @requiere_caja_abierta
-def crear_venta(request):
+def crear_venta(request):   
     DetalleVentaFormSet = formset_factory(
         DetalleVentaForm, extra=0, can_delete=True, min_num=1, validate_min=True
     )
@@ -48,8 +48,9 @@ def crear_venta(request):
     preload = None  # ✅ siempre
 
     if request.method == 'POST':
-        cliente_form = ClienteVentaForm(request.POST)
-        formset = DetalleVentaFormSet(request.POST)
+        cliente_form = ClienteVentaForm(request.POST, empresa=request.empresa)
+        formset = DetalleVentaFormSet(request.POST, form_kwargs={'empresa': request.empresa})
+
         pago_formset = PagoFormSet(request.POST, prefix='pagos')
 
         # Filtrar formularios válidos
@@ -72,9 +73,10 @@ def crear_venta(request):
             try:
                 with transaction.atomic():
                     venta = cliente_form.save(commit=False)
+                    venta.empresa = request.empresa
 
                     # CAI y número
-                    cai_activo = Cai.objects.filter(activo=True).order_by('-id').first()
+                    cai_activo = Cai.objects.filter(activo=True, empresa=request.empresa).order_by('-id').first()
                     if cai_activo:
                         correlativo = cai_activo.asignar_siguiente_correlativo()
                         venta.cai = cai_activo
@@ -101,6 +103,11 @@ def crear_venta(request):
                     # ✅ Validar stock antes
                     for form in forms_validos:
                         producto = form.cleaned_data['producto']
+                        
+                         # 🔒 no permitir productos de otra empresa
+                        if producto.empresa_id != request.empresa.id:
+                            raise ValueError("❌ Producto inválido para esta empresa.")
+                     
                         cantidad = form.cleaned_data['cantidad']
                         if producto.stock < cantidad:
                             raise ValueError(
@@ -116,6 +123,7 @@ def crear_venta(request):
                         descuento = form.cleaned_data.get('descuento', 0)
 
                         detalle = DetalleVenta.objects.create(
+                            empresa=request.empresa,
                             venta=venta,
                             producto=producto,
                             cantidad=cantidad,
@@ -166,6 +174,7 @@ def crear_venta(request):
                         for p in pagos_validos:
                             Pago.objects.create(
                                 venta=venta,
+                                empresa=request.empresa,
                                 metodo=p.cleaned_data['metodo'],
                                 monto=p.cleaned_data['monto'],
                                 referencia=p.cleaned_data.get('referencia') or ''
@@ -176,6 +185,7 @@ def crear_venta(request):
                         if not venta.cliente_id:
                             raise ValueError("❌ Para ventas a crédito debes seleccionar un cliente.")
                         CuentaPorCobrar.objects.create(
+                            empresa=request.empresa,
                             cliente=venta.cliente,
                             venta=venta,
                             monto_pendiente=venta.total,
@@ -187,7 +197,7 @@ def crear_venta(request):
                     # ✅ Si venía de cotización, marcarla facturada
                     cot_id = request.session.pop('cotizacion_para_facturar', None)
                     if cot_id:
-                        Cotizacion.objects.filter(id=cot_id).update(estado='facturada')
+                        Cotizacion.objects.filter(id=cot_id, empresa=request.empresa).update(estado='facturada')
 
                     messages.success(
                         request,
@@ -210,14 +220,20 @@ def crear_venta(request):
 
     else:
         # ✅ GET
-        cliente_form = ClienteVentaForm()
-        formset = DetalleVentaFormSet()
+        cliente_form = ClienteVentaForm(empresa=request.empresa)
+        formset = DetalleVentaFormSet(form_kwargs={'empresa': request.empresa})
+
         pago_formset = PagoFormSet(prefix='pagos')
 
         # ✅ precarga solo en GET
         from_id = request.GET.get('from_cotizacion', '').strip()
         if from_id.isdigit():
-            cot = Cotizacion.objects.filter(id=int(from_id)).prefetch_related('detalles__producto').first()
+            
+            cot = Cotizacion.objects.filter(
+                id=int(from_id),
+                empresa=request.empresa
+            ).prefetch_related('detalles__producto').first()
+
             if cot and cot.estado != 'facturada':
                 preload = {
                     "cotizacion_id": cot.id,
@@ -243,7 +259,7 @@ def crear_venta(request):
                 }
 
     # ✅ ESTE RETURN SIEMPRE SE EJECUTA SI NO HUBO redirect
-    productos = Producto.objects.filter(activo=True).order_by('nombre')
+    productos = Producto.objects.filter(empresa=request.empresa, activo=True).order_by('nombre')
     context = {
         'cliente_form': cliente_form,
         'formset': formset,
@@ -254,12 +270,13 @@ def crear_venta(request):
     return render(request, 'ventas/crear_venta.html', context)
 
 
+from django.core.paginator import Paginator
 
 @login_required
 @requiere_modulo('mod_ventas')
 @permission_required('ventas.view_venta', raise_exception=True)
 def resumen_ventas(request):
-    ventas = Venta.objects.all().order_by('-fecha')
+    ventas = Venta.objects.filter(empresa=request.empresa).order_by('-fecha')
 
     # ✅ Filtros (defaults para evitar errores)
     desde = request.GET.get('desde', '')
@@ -298,8 +315,11 @@ def resumen_ventas(request):
 
     total_general = ventas.aggregate(Sum('total'))['total__sum'] or 0
 
+    paginator = Paginator(ventas, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     return render(request, 'ventas/resumen_ventas.html', {
-        'ventas': ventas,
+        'page_obj': page_obj,
         'total_general': total_general,
         'f': {
             'desde': desde,
@@ -314,8 +334,12 @@ def resumen_ventas(request):
 @login_required
 @requiere_modulo('mod_ventas')
 def factura(request, venta_id):
-    venta = get_object_or_404(Venta, id=venta_id)
-    detalles = DetalleVenta.objects.filter(venta=venta).select_related('producto')
+    venta = get_object_or_404(Venta, id=venta_id, empresa=request.empresa)
+    detalles = DetalleVenta.objects.filter(
+    venta=venta,
+    empresa=request.empresa
+    ).select_related('producto')
+
 
     # Fecha de vencimiento para crédito
     fecha_vencimiento = None
@@ -329,7 +353,7 @@ def factura(request, venta_id):
 
     # Obtener configuración del negocio
     try:
-        empresa = EmpresaConfig.objects.get(pk=1)
+        empresa = EmpresaConfig.objects.filter(empresa=request.empresa).first()
     except EmpresaConfig.DoesNotExist:
         empresa = None  # Evita error si aún no han configurado nada
 
@@ -362,19 +386,19 @@ def buscar_producto(request):
     try:
         # 1. Buscar por ID numérico
         if codigo.isdigit():
-            producto = Producto.objects.filter(id=int(codigo), activo=True).first()
+            producto = Producto.objects.filter(id=int(codigo),empresa=request.empresa,activo=True).first()
 
         # 2. Buscar por código de barra
         if not producto:
-            producto = Producto.objects.filter(codigo_barra=codigo, activo=True).first()
+            producto = Producto.objects.filter(codigo_barra=codigo,empresa=request.empresa,activo=True).first()
 
         # 3. Buscar por código interno
         if not producto:
-            producto = Producto.objects.filter(codigo=codigo, activo=True).first()
+            producto = Producto.objects.filter(codigo=codigo,empresa=request.empresa, activo=True).first()
 
         # 4. Buscar por nombre parcial
         if not producto:
-            producto = Producto.objects.filter(nombre__icontains=codigo, activo=True).first()
+            producto = Producto.objects.filter(nombre__icontains=codigo,empresa=request.empresa, activo=True).first()
 
         if producto:
             return JsonResponse({
@@ -412,7 +436,7 @@ def buscar_producto_id(request):
         return JsonResponse({'encontrado': False, 'error': 'ID inválido'})
     
     try:
-        producto = Producto.objects.get(id=int(producto_id), activo=True)
+        producto = Producto.objects.get(id=int(producto_id),empresa=request.empresa,activo=True)
         return JsonResponse({
             'encontrado': True,
             'id': producto.id,

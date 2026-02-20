@@ -74,7 +74,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for c in cotizaciones %}
+      {% for c in page_obj %}
         <tr>
           <td>{{ c.id }}</td>
           <td>{{ c.cliente.nombre }}</td>
@@ -106,6 +106,8 @@
     </tbody>
   </table>
 
+  {% include "partials/pagination.html" with page_obj=page_obj %}
+  
 </div>
 
 

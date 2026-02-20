@@ -28,6 +28,8 @@ class DetalleCompraForm(forms.ModelForm):
         self.fields['producto'].widget.attrs.update({'class': 'form-control producto-select'})
         
 
+from proveedores.models import Proveedor
+
 class CompraForm(forms.ModelForm):
     class Meta:
         model = Compra
@@ -38,5 +40,16 @@ class CompraForm(forms.ModelForm):
             'tipo_pago': forms.Select(attrs={'class': 'form-select'}),
             'fecha_recepcion': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'notas': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Observaciones opcionales...'}),
-        }        
+        }
+
+    def __init__(self, *args, **kwargs):
+        empresa = kwargs.pop('empresa', None)  # 👈 recibimos empresa
+        super().__init__(*args, **kwargs)
+
+        if empresa:
+            self.fields['proveedor'].queryset = Proveedor.objects.filter(
+                empresa=empresa,
+                activo=True
+            )
+       
         

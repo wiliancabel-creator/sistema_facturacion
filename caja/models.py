@@ -2,17 +2,16 @@ from django.db import models
 from django.utils import timezone
 from decimal import Decimal
 from django.conf import settings
-
-
-
+from core.models import Empresa
 
 
 class Caja(models.Model):
+    empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT, related_name="cajas")
     nombre = models.CharField(max_length=60, default="Caja Principal")
     activa = models.BooleanField(default=True)
 
     def __str__(self):
-        return self.nombre
+        return f"{self.nombre} ({self.empresa})"
 
 
 class CajaSesion(models.Model):
@@ -22,6 +21,8 @@ class CajaSesion(models.Model):
         ('anulada', 'Anulada'),
     ]
 
+    empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT, related_name="caja_sesiones")
+
     caja = models.ForeignKey('caja.Caja', on_delete=models.PROTECT)
     cajero = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
 
@@ -30,7 +31,6 @@ class CajaSesion(models.Model):
 
     monto_apertura = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
 
-    # Snapshot al cerrar (totales por método)
     total_efectivo = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     total_tarjeta = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     total_transferencia = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
@@ -60,6 +60,8 @@ class CajaMovimiento(models.Model):
         ('egreso', 'Egreso'),
     ]
 
+    empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT, related_name="caja_movimientos")
+
     sesion = models.ForeignKey(CajaSesion, on_delete=models.CASCADE, related_name='movimientos')
     tipo = models.CharField(max_length=10, choices=TIPOS)
     concepto = models.CharField(max_length=120)
@@ -69,3 +71,4 @@ class CajaMovimiento(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} L{self.monto} - {self.concepto}"
+
